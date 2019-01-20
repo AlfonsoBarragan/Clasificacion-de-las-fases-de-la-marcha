@@ -16,6 +16,8 @@ RBFLAGS 	= -it -d -P --name $(CONTNAME) -v $(CURDIR)/$(DIRWORK):/home/work $(IMA
 build:
 	$(DOCK) $(BUILD) $(BFLAGS)
 
+launch: bash work finish
+
 work:
 	$(DOCK) $(ATTC) $(CONTNAME)
 

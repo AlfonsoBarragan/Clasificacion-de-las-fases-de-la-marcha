@@ -16,6 +16,7 @@ html5lib==0.999999999
 hyperlink==18.0.0
 idna==2.8
 incremental==17.5.0
+joblib==0.10.4.dev0
 Keras==2.2.4
 Keras-Applications==1.0.6
 Keras-Preprocessing==1.0.5
