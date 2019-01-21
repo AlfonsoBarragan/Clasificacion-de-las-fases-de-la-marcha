@@ -9,9 +9,12 @@ RUN			= run
 ATTC 		= attach
 STOP		= stop
 DEL			= rm
+PERM 		= chmod
+SU 			= sudo
 
 BFLAGS 		= . -t $(IMAGNAME)
-RBFLAGS 	= -it -d -P --name $(CONTNAME) -v $(CURDIR)/$(DIRWORK):/home/work $(IMAGNAME)
+RBFLAGS 	= -it -d -P --name $(CONTNAME) -v $(CURDIR)/$(DIRWORK):/root/work $(IMAGNAME)
+PERMFLAGS 	= +777 
 
 build:
 	$(DOCK) $(BUILD) $(BFLAGS)
@@ -31,4 +34,5 @@ stop:
 
 delete: 
 	$(DOCK) $(DEL) $(CONTNAME)
+	$(SU) $(PERM) $(PERMFLAGS) $(CURDIR)/$(DIRWORK)*
 
