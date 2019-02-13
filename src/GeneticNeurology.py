@@ -1,30 +1,26 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import datetime as dt
 
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, cohen_kappa_score
 
+from keras.models import Sequential
+from keras.utils import np_utils
+from keras.layers.core import Dense, Activation, Dropout
 
-class neural_network_G:    
-    from keras.models import Sequential
-    from keras.utils import np_utils
-    from keras.layers.core import Dense, Activation, Dropout
+import pandas as pd
     
-    from sklearn.metrics import classification_report, confusion_matrix
-    
-    import pandas as pd
-    import numpy as np
-        
-    import utils as data_utilities
-    import routes 
-    import random
+import utils as data_utilities
+import routes 
+import random
+
+class Neural_Network_G:    
 
     def __init__(self, n_layers, type_of_model, list_types_per_layer, 
                  list_neurons_per_layer, input_size, n_classes, 
                  input_parameters, list_activation_function, 
                  list_threshold_function, epochs, performance,
-                 compile_loss_function, compile_optimizer_function):
+                 compile_loss_function, compile_optimizer_function, batch_size):
 
         born_moment = dt.datetime.now()
         
@@ -46,6 +42,8 @@ class neural_network_G:
         self.compile_loss_function          = compile_loss_function
         self.compile_optimizer_function     = compile_optimizer_function
         
+        self.batch_size                     = batch_size
+        
         self.model_id = hash("{}_{}_{}_{}_{}_{}_{}_{}".format(
                 self.n_layers, self.type_of_model, self.n_classes,
                 born_moment.hour, born_moment.minute, born_moment.second,
@@ -53,9 +51,9 @@ class neural_network_G:
         
     def assign_data_randomize(self):
         
-        full_data_train = self.data_utilities.read_dataset(self.routes.full_data, ";")
+        full_data_train = data_utilities.read_dataset(routes.full_data, ";")
         
-        data_train_to_fit, data_train_to_test = self.data_utilities.divide_datasets(
+        data_train_to_fit, data_train_to_test = data_utilities.divide_datasets(
                                                 full_data_train, percentage = 0.87)
         self.data_train                       = data_train_to_fit
         self.data_test                        = data_train_to_test
@@ -101,9 +99,9 @@ class neural_network_G:
                         self.compile_optimizer_function))
 
     def prepare_data_for_fit(self, exclude):
-        data_norm = self.data_utilities.clean_and_normalize_data(self.data_train, exclude)
+        data_norm = data_utilities.clean_and_normalize_data(self.data_train, exclude)
         
-        data_train, data_test = self.data_utilities.divide_datasets(data_norm)
+        data_train, data_test = data_utilities.divide_datasets(data_norm)
         
         X_train = data_train.loc[:, data_train.columns.difference(exclude)]
         y_train = data_train[exclude]
@@ -112,7 +110,7 @@ class neural_network_G:
         y_test = data_test[exclude]
         
         # convert list of labels to binary class matrix
-        y_train = self.np_utils.to_categorical(y_train) 
+        y_train = np_utils.to_categorical(y_train) 
         
         return X_train, y_train, X_test, y_test
 
@@ -121,24 +119,29 @@ class neural_network_G:
         X_train, y_train, X_test, y_test = self.prepare_data_for_fit(exclude)
         
         if self.epochs <= 17:
-            self.neural_model.fit(X_train, y_train, nb_epoch=17, batch_size=16, validation_split=0.1, verbose=2)
-        
+            self.neural_model.fit(X_train, y_train, nb_epoch=18, 
+                                  batch_size=self.batch_size, 
+                                  validation_split=0.1, verbose=2)
+            self.epochs += 1
+            
         else:
-            new_learn_epochs = self.random.randint(10)
+            new_learn_epochs = random.randint(1, 100)
             self.neural_model.fit(X_train, y_train, nb_epoch=new_learn_epochs, batch_size=16, validation_split=0.1, verbose=2)
             
             self.epochs += new_learn_epochs
             
         self.generate_report(X_test, y_test)
         
-        if self.epochs % 50 == 0:
-            self.neural_model.save("keras_model_{}_epoch_{}".format(
+        if self.epochs % 50 > 1:
+            self.neural_model.save("models/keras_model_{}_epoch_{}".format(
                     self.model_id, self.epochs))
         
     def test_model(self):
         pass
 
     def init_and_test_class(self, exclude):
+        contador = 0
+        
         print("\---- Asignando particion de los datos al modelo ... ----/")
         self.assign_data_randomize()
         
@@ -148,20 +151,65 @@ class neural_network_G:
         print("\---- Iniciando el entrenamiento del modelo ... ----/")
         self.fit_model(exclude)
         
+        while self.performance < 0.25 and contador < 150:
+            print("\t/-- Try interaction number {} --/".format(contador))
+            
+            self.fit_model(exclude)
+            contador += self.epochs
+        
     def generate_report(self, X_test, y_test):
         
         y_pred = self.neural_model.predict(X_test)
         
         print("Matriz de confusión I:\n")
         
-        matrix = confusion_matrix(y_test, y_pred.argmax(axis=1))
+        matrix      = confusion_matrix(y_test, y_pred.argmax(axis=1))
         print(matrix)
         
         
         print("Matriz de confusión II:\n")
        
-        matriz = self.pd.crosstab(y_test['quality'], y_pred.argmax(axis=1), rownames=['actual'], colnames=['preds'])
+        matriz      = pd.crosstab(y_test['quality'], y_pred.argmax(axis=1), rownames=['actual'], colnames=['preds'])
         print(matriz)
+        
+        print("Precision Score:\n")
+        
+        precision   = precision_score(y_test, y_pred.argmax(axis=1), average=None)
+        print(precision)
+        
+        print("Recall Score:\n")
+                
+        recall      = recall_score(y_test, y_pred.argmax(axis=1), average=None)
+        print(recall)
+        
+        print("F1 Score:\n")
+        
+        f1          = f1_score(y_test,y_pred.argmax(axis=1), average=None)
+        print(f1)
+        
+        print("Cohen's kappa Score:\n")
+
+        kappa = cohen_kappa_score(y_test, y_pred.argmax(axis=1))
+        print(kappa)
+        
+        self.calculate_performance(y_test, y_pred, precision_score)
+        
+    def calculate_performance(self, y_test, y_predict, performance_function):
+        performance = eval("performance_function(y_test, y_predict.argmax(axis=1), average=None)")
+        accumulate  = 0
+        
+        for i in range(len(performance)):
+            accumulate += performance[i]
+            
+        self.performance = accumulate/len(performance)
+        
+        print("performance in this iteration, was set to: {}".format(self.performance))
+
+class Neural_Nature_Manager:
+    
+    def __init__(self, models_population):
+        
+        self.population = models_population
     
     def proccess_execution_report():
         pass
@@ -172,4 +220,27 @@ class neural_network_G:
         # Generacion de nuevos individuos
         # Agragacion a la poblacion
         pass
+    
+    def subjects_selection(self):
+        # Calcular Rendimiento de la poblacion
+        # Calcular rendimiento de individuo --> Hecho
+        selection_probabilities = []
+        performance_subjects    = []
+        
+        performance_population  = 0
+        
+        for model in self.population:
+            performance_subjects.append(model.performance)
+            performance_population  += model.performance
+            
+        performance_population /= len(self.population)    
+            
+        for subject in performance_subjects:
+            selection_probabilities.append((subject/performance_population, performance_subjects.index(subject)))
+            
+        selection_probabilities.sort()
+        
+        # Generar un aleatorio uniforme de 0 a 1, si es menor o igual a la probabilidad
+        # rendimiento_individuo/rendimiento_poblacion, entonces se produce la selección
 
+        
