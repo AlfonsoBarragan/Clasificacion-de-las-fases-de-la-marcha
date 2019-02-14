@@ -119,7 +119,7 @@ class Neural_Network_G:
         X_train, y_train, X_test, y_test = self.prepare_data_for_fit(exclude)
         
         if self.epochs <= 17:
-            self.neural_model.fit(X_train, y_train, nb_epoch=18, 
+            self.neural_model.fit(X_train, y_train, epochs=18, 
                                   batch_size=self.batch_size, 
                                   validation_split=0.1, verbose=2)
             self.epochs += 1
@@ -151,7 +151,7 @@ class Neural_Network_G:
         print("\---- Iniciando el entrenamiento del modelo ... ----/")
         self.fit_model(exclude)
         
-        while self.performance < 0.25 and contador < 150:
+        while self.performance < 0.25 and contador < 20:
             print("\t/-- Try interaction number {} --/".format(contador))
             
             self.fit_model(exclude)
@@ -226,21 +226,61 @@ class Neural_Nature_Manager:
         # Calcular rendimiento de individuo --> Hecho
         selection_probabilities = []
         performance_subjects    = []
+        cross_subjects          = []
         
         performance_population  = 0
+        cross                   = 999
         
         for model in self.population:
             performance_subjects.append(model.performance)
             performance_population  += model.performance
-            
-        performance_population /= len(self.population)    
+             
+        print(performance_population)
             
         for subject in performance_subjects:
-            selection_probabilities.append((subject/performance_population, performance_subjects.index(subject)))
-            
+            selection_probabilities.append([subject/performance_population, performance_subjects.index(subject)])
+
         selection_probabilities.sort()
-        
+
+        for i in range(len(selection_probabilities)):
+            if i != 0:
+                selection_probabilities[i][0] += selection_probabilities[i-1][0]
+
+        print(selection_probabilities)
+
         # Generar un aleatorio uniforme de 0 a 1, si es menor o igual a la probabilidad
         # rendimiento_individuo/rendimiento_poblacion, entonces se produce la selección
-
+        for i in range(len(selection_probabilities)):
+            rulet = random.uniform(0,1)
+            
+            for j in range(len(selection_probabilities)):
+                
+                if selection_probabilities[j-1][0] < rulet and selection_probabilities[j][0] >= rulet and j != 0:
+                    cross = selection_probabilities[j][1]
+                    
+                elif 0 < rulet and selection_probabilities[j][0] > rulet and j == 0:
+                    cross = selection_probabilities[j][1]
+                    
+            print("rulet result: {} | Pairing subject {} with subject {}".format(rulet, i, cross))
+            
+            while i == cross:
+                rulet = random.uniform(0,1)
+                print("{} - {} - prob: {}".format(i, cross, rulet))
+            
+                for j in range(len(selection_probabilities)):
+                    
+                    if selection_probabilities[j-1][0] < rulet and selection_probabilities[j][0] >= rulet and j != 0:
+                        cross = selection_probabilities[j][1]
+                        
+                    elif 0 < rulet and selection_probabilities[j][0] > rulet and j == 0:
+                        cross = selection_probabilities[j][1]
+                    
+            cross_subjects.append([i, cross])
+                    
+                    
+        print("Subject Pairing List (SPL)\n")
+        print(cross_subjects)
+                                        
+        return cross_subjects
+        
         
