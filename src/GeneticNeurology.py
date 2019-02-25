@@ -2,25 +2,27 @@
 
 import datetime as dt
 
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, cohen_kappa_score
+from sklearn.metrics import confusion_matrix, precision_score
+from sklearn.metrics import recall_score, f1_score, cohen_kappa_score
 
 from keras.models import Sequential
 from keras.utils import np_utils
 from keras.layers.core import Dense, Activation, Dropout
 
 import pandas as pd
-    
+
 import utils as data_utilities
-import routes 
+import routes
 import random
 
-class Neural_Network_G:    
 
-    def __init__(self, n_layers, type_of_model, list_types_per_layer, 
-                 list_neurons_per_layer, input_size, n_classes, 
-                 input_parameters, list_activation_function, 
+class Neural_Network_G:
+
+    def __init__(self, n_layers, type_of_model, list_types_per_layer,
+                 list_neurons_per_layer, input_size, n_classes,
+                 input_parameters, list_activation_function,
                  list_threshold_function, epochs, performance,
-                 compile_loss_function, compile_optimizer_function, batch_size):
+                 compile_loss_function, compile_opt_function, batch_size):
 
         born_moment = dt.datetime.now()
         
@@ -40,7 +42,7 @@ class Neural_Network_G:
         self.performance                    = performance
         
         self.compile_loss_function          = compile_loss_function
-        self.compile_optimizer_function     = compile_optimizer_function
+        self.compile_optimizer_function     = compile_opt_function
         
         self.batch_size                     = batch_size
         
@@ -282,5 +284,35 @@ class Neural_Nature_Manager:
         print(cross_subjects)
                                         
         return cross_subjects
+        
+# Take a look later
+
+def individual_evaluation(model, data_test, labels_test, number_classes, model_id, route_report, epochs):
+	test_loss, test_acc = model.evaluate(data_test, labels_test)
+	pre_cls=model.predict_classes(data_test)
+	cm1 = confusion_matrix(labels_test, pre_cls)
+
+	true_positive = np.diag(cm1)
+
+	false_positive = []
+	for i in range(number_classes):
+		false_positive.append(sum(cm1[:,i]) - cm1[i,i])
+
+
+	false_negative = []
+	for i in range(number_classes):
+		false_positive.append(sum(cm1[i,:]) - cm1[i,i])
+
+
+	true_negative = []
+	for i in range(num_classes):
+		temp = np.delete(cm1, i, 0)
+		temp = np.delete(temp, i, 1)  # delete ith column
+		true_negative.append(sum(sum(temp)))
+	performance_report = 'model_{}, {}, {}'.format(model_id, test_acc, epochs)
+	for i in range(number_classes):
+		performance_report += ', {}, {}, {}, {}'.format(true_positive[i], true_negative[i], false_positive[i], false_negative[i])
+
+	os.system('echo {} >> {}'.format(performance_report, route_report))
         
         

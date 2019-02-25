@@ -6,8 +6,12 @@ Created on Tue Feb 12 14:09:42 2019
 @author: alfonso
 """
 from GeneticNeurology import Neural_Network_G, Neural_Nature_Manager
+from camera_sincronization import capture_from_webcam
 
-if __name__ == '__main__':
+def test_camera():
+    capture_from_webcam()
+    
+def test_neurology():    
     neural_birkin_1 = Neural_Network_G(3, 'Sequential', ['Dense', 'Dense', 'Dense'],
                              [128, 128], 11, 9, 11, ['relu', 'relu', 'softmax'],
                              [0.15, 0.15], 17, 0, 'categorical_crossentropy', 
@@ -89,3 +93,7 @@ if __name__ == '__main__':
                                            neural_birkin_13])
     
     umbrella_NEST.subjects_selection()
+
+
+if __name__ == '__main__':
+    test_camera()
