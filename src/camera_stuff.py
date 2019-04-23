@@ -1,4 +1,3 @@
-import routes
 import cv2
 
 def capture_from_webcam():
