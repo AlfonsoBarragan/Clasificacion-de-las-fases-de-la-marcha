@@ -83,8 +83,15 @@ def process_samples():
     
     # Escribimos la cabecera del csv
     samples_cleaned.write("Timestamp,Date,Source,Value_1,Value_2,Value_3,Value_4,Value_5,Value_6,Value_7,Value_8,Value_9," +
-                            "Value_10,Value_11,Value_12,Value_13,Value_14,Value_15,Value_16,Value_17,Value_18,Value_19\n")
+                            "Value_10,Value_11,Value_12,Value_13,Value_14,Value_15,Value_16,Value_17,Value_18,Value_19,Value_20\n")
     
+    # Parameters progress bar
+    size 	= len(samples_file.readlines())
+    index 	= 2
+
+    # Set the pointer of the file to position 0
+    samples_file.seek(0)
+
     # Leer las dos primeras lineas y no hacer nada con ellas, porque no contienen
     # información relevante
     _ = samples_file.readline()
@@ -98,10 +105,6 @@ def process_samples():
     timestamps_container    = []
     handle_container        = []
     values_container        = []
-    
-    # Parameters progress bar
-    size 	= len(samples_file.readlines())
-    index 	= 2
 
     printProgressBar(index, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
     
@@ -121,18 +124,17 @@ def process_samples():
 
         elif values_patron.search(line) != None:
             values_list = line[values_patron.search(line).end():].split(' ')
-            values_container.append(values_list[1:len(values_list)-1])
+            values_container.append(values_list[0:len(values_list)-1])
 
         if len(values_container) == 1:
             
             if len(timestamps_container) > 0:
                 line_to_write += "{},{} {},{}".format(convert_date_to_timestamp(timestamps_container[0]), timestamps_container[0][0],
                                                         timestamps_container[0][1], handle_container[0])
-                
                 for value in values_container[0]:
                     line_to_write += ",{}".format(value)
                 
-                if len(values_container[0]) != 19:
+                if len(values_container[0]) != 20:
                     line_to_write += ",-1,-1,-1,-1"
 
                 line_to_write += "\n"

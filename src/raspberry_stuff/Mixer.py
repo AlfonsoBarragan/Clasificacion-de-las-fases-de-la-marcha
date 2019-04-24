@@ -4,6 +4,8 @@ import threading
 import time
 import os
 import sys, getopt
+import struct
+from functools import reduce
 
 # Internal libraries
 import utils
@@ -24,7 +26,7 @@ def see_and_stomp(time, display=-1):
     thread_sto.start()
 
 def assign_entry_point_and_transform_datasets(dataframe):
-    dataframe_aux = dataframe[(dataframe.Value_16 == '-1')]
+    dataframe_aux = dataframe[(dataframe.Value_20 == '-1')]
     index_syncro = int(dataframe_aux.iloc[2].name)
 
     new_dataframe = dataframe[(dataframe.index > index_syncro)]
@@ -32,13 +34,39 @@ def assign_entry_point_and_transform_datasets(dataframe):
     return new_dataframe
 
 def converse_hex_plantar_pressure(dataframe_insole):
+	mux_1 = []
+	mux_2 = []
+	mux_3 = []
+	mux_4 = []
+	
 	for i in range(0, len(dataframe_insole), 4):
 		sample_1 = dataframe_insole.iloc[i-3]
 		sample_2 = dataframe_insole.iloc[i-2]
 		sample_3 = dataframe_insole.iloc[i-1]
 		sample_4 = dataframe_insole.iloc[i]
 		
+		mux_1.extend(sample_1[3:19])
+		mux_2.extend(sample_2[3:19])
+		mux_3.extend(sample_3[3:19])
 		
+		mux_4.extend(sample_1[20:])
+		mux_4.extend(sample_2[20:])
+		mux_4.extend(sample_3[20:])
+		mux_4.extend(sample_4[16:])
+		
+		mux_1 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_1))) 
+		mux_2 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_2)))
+		mux_3 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_3)))
+		mux_4 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_4)))
+		
+		
+		mux_1_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_1))
+		mux_2_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_2))
+		mux_3_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_3))
+		mux_4_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_4))
+		
+		print("{}, {}, {}, {}".format(mux_1_values,mux_2_values,mux_3_values,mux_4_values))
+		break
 def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
     full_data_cleaned = utils.read_dataset("{}/{}".format(routes.sample_directory,                                                                 routes.samples_cleaned_uni))
 
@@ -50,6 +78,9 @@ def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
     # de hexadecimal a datos de presión plantar
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     insoleR_dataset = assign_entry_point_and_transform_datasets(insoleR_dataset)
+    
+    converse_hex_plantar_pressure(insoleL_dataset)
+    converse_hex_plantar_pressure(insoleR_dataset)
 
     # Una vez divididos, hacer el siguiente preproceso:
     #   -> capturar las muestras de 4 en 4 y asignarles los frames entre  el primer instante
