@@ -54,6 +54,16 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     if iteration == total: 
         print()
 
+def insert_row_in_pos(pos, row_value, df):
+	# Funciona con objetos de tipo Series de pandas.
+	
+	data_half_low, data_half_big = df[:pos], df[pos:]
+	
+	data_half_low = data_half_low.append(row_value, ignore_index = True)
+	data_half_low = data_half_low.append(data_half_big, ignore_index = True)
+	
+	return data_half_low
+
 def binarySearch(alist, item):
     first = 0
     last = len(alist)-1

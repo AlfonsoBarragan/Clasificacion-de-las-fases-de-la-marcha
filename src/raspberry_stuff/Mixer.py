@@ -5,6 +5,7 @@ import time
 import os
 import sys, getopt
 import struct
+import pandas as pd
 from functools import reduce
 
 # Internal libraries
@@ -39,11 +40,11 @@ def converse_hex_plantar_pressure(dataframe_insole):
 	mux_3 = []
 	mux_4 = []
 	
-	for i in range(0, len(dataframe_insole), 4):
-		sample_1 = dataframe_insole.iloc[i-3]
-		sample_2 = dataframe_insole.iloc[i-2]
-		sample_3 = dataframe_insole.iloc[i-1]
-		sample_4 = dataframe_insole.iloc[i]
+	for i in range(0, len(dataframe_insole), 3):
+		sample_1 = dataframe_insole.iloc[i-2]
+		sample_2 = dataframe_insole.iloc[i-1]
+		sample_3 = dataframe_insole.iloc[i]
+		sample_4 = dataframe_insole.iloc[i + 1]
 		
 		mux_1.extend(sample_1[3:19])
 		mux_2.extend(sample_2[3:19])
@@ -65,8 +66,34 @@ def converse_hex_plantar_pressure(dataframe_insole):
 		mux_3_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_3))
 		mux_4_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_4))
 		
-		print("{}, {}, {}, {}".format(mux_1_values,mux_2_values,mux_3_values,mux_4_values))
-		break
+		print("{}, {}, {}, 	{}".format(mux_1_values,mux_2_values,mux_3_values,mux_4_values))
+		
+		
+def repare_samples_dataset(df):
+	
+	counter = 0
+	dataframe = df.copy()
+	data_series_last_mux_4 = []
+	
+	# Parameters for progress bar
+	size  = len(dataframe)
+	
+	utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
+	for i in range(size):
+		counter += 1
+		if counter % 4 == 0 and len(dataframe) > i:
+			if dataframe.iloc[i].Value_17 != '-1':
+				dataframe = utils.insert_row_in_pos(i, data_series_last_mux_4, dataframe)
+				
+				counter = 0
+			else:
+				data_series_last_mux_4 = dataframe.iloc[i]
+				counter = 0
+		utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
+	return dataframe
+
 def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
     full_data_cleaned = utils.read_dataset("{}/{}".format(routes.sample_directory,                                                                 routes.samples_cleaned_uni))
 
