@@ -18,81 +18,99 @@ def throw_observer(time_to_collect, display):
 def throw_stomper(time_to_collect):
     os.system("python3 Stomper.py -t {} ".format(time_to_collect))
 
-def see_and_stomp(time, display=-1):
+def see_and_stomp(time_to_recollect, display=-1):
     # Create two threads as follows
-    thread_obs = threading.Thread(target=throw_observer, args=[time,display])
-    thread_sto = threading.Thread(target=throw_stomper, args=[time])
+    thread_obs = threading.Thread(target=throw_observer, args=[time_to_recollect,display])
+    thread_sto = threading.Thread(target=throw_stomper, args=[time_to_recollect])
 
     thread_obs.start()
     thread_sto.start()
 
 def assign_entry_point_and_transform_datasets(dataframe):
     dataframe_aux = dataframe[(dataframe.Value_20 == '-1')]
-    index_syncro = int(dataframe_aux.iloc[2].name)
+    index_entry = int(dataframe_aux.iloc[2].name)
+    index_exit  = int(dataframe_aux.last_valid_index()) - 3
 
-    new_dataframe = dataframe[(dataframe.index > index_syncro)]
+    new_dataframe = dataframe[(dataframe.index > index_entry) & 
+                              (dataframe.index < index_exit)]
 
     return new_dataframe
 
 def converse_hex_plantar_pressure(dataframe_insole):
-	mux_1 = []
-	mux_2 = []
-	mux_3 = []
-	mux_4 = []
-	
-	for i in range(0, len(dataframe_insole), 3):
-		sample_1 = dataframe_insole.iloc[i-2]
-		sample_2 = dataframe_insole.iloc[i-1]
-		sample_3 = dataframe_insole.iloc[i]
-		sample_4 = dataframe_insole.iloc[i + 1]
-		
-		mux_1.extend(sample_1[3:19])
-		mux_2.extend(sample_2[3:19])
-		mux_3.extend(sample_3[3:19])
-		
-		mux_4.extend(sample_1[20:])
-		mux_4.extend(sample_2[20:])
-		mux_4.extend(sample_3[20:])
-		mux_4.extend(sample_4[16:])
-		
-		mux_1 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_1))) 
-		mux_2 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_2)))
-		mux_3 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_3)))
-		mux_4 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_4)))
-		
-		
-		mux_1_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_1))
-		mux_2_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_2))
-		mux_3_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_3))
-		mux_4_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_4))
-		
-		print("{}, {}, {}, 	{}".format(mux_1_values,mux_2_values,mux_3_values,mux_4_values))
-		
-		
+    
+    for i in range(0, len(dataframe_insole), 4):
+        
+        print("----------------- ITER {} -----------------".format(i))
+        
+        mux_1 = []
+        mux_2 = []
+        mux_3 = []
+        mux_4 = []
+        
+        sample_1 = dataframe_insole.iloc[i]
+        sample_2 = dataframe_insole.iloc[i + 1]
+        sample_3 = dataframe_insole.iloc[i + 2]
+        sample_4 = dataframe_insole.iloc[i + 3]
+        
+        mux_1.extend(sample_1[3:19])
+        mux_2.extend(sample_2[3:19])
+        mux_3.extend(sample_3[3:19])
+        
+        mux_4.extend(sample_1[19:])
+        mux_4.extend(sample_2[19:])
+        mux_4.extend(sample_3[19:])
+        mux_4.extend(sample_4[15:19])
+        
+        mux_1 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_1))) 
+        mux_2 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_2)))
+        mux_3 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_3)))
+        mux_4 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_4)))
+                
+        mux_1_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_1))
+        mux_2_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_2))
+        mux_3_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_3))
+        mux_4_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_4))
+        
+        print("{}, {}, {}, {}".format(mux_1_values,mux_2_values,mux_3_values,mux_4_values))
+        
+        
 def repare_samples_dataset(df):
-	
-	counter = 0
-	dataframe = df.copy()
-	data_series_last_mux_4 = []
-	
-	# Parameters for progress bar
-	size  = len(dataframe)
-	
-	utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    
+    counter = 0
+    dataframe = df.copy()
+    data_series_last_mux_4 = []
+    
+    # Parameters for progress bar
+    size  = len(dataframe)
+    
+    utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-	for i in range(size):
-		counter += 1
-		if counter % 4 == 0 and len(dataframe) > i:
-			if dataframe.iloc[i].Value_17 != '-1':
-				dataframe = utils.insert_row_in_pos(i, data_series_last_mux_4, dataframe)
-				
-				counter = 0
-			else:
-				data_series_last_mux_4 = dataframe.iloc[i]
-				counter = 0
-		utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    for i in range(size):
+        counter += 1
+        if counter % 4 == 0 and len(dataframe) > i:
+            if dataframe.iloc[i].Value_17 != '-1':
+                
+                if dataframe.iloc[i+1].Value_17 == '-1' and dataframe.iloc[i+2].Value_17 != '-1':
+                    # Borrar el siguiente
+                    dataframe = dataframe.drop([dataframe.index[i]], axis=0)
+                    counter = 0
+                
+                elif dataframe.iloc[i+2].Value_17 == '-1':
+                    # Borrar los dos siguientes
+                    dataframe = dataframe.drop([dataframe.index[i],dataframe.index[i+1]], axis=0)
+                    counter = 0
+                    
+                else:
+                    dataframe = utils.insert_row_in_pos(i, data_series_last_mux_4, dataframe)
+                    counter = 0
+                
+            else:
+                data_series_last_mux_4 = dataframe.iloc[i]
+                counter = 0
+                
+        utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-	return dataframe
+    return dataframe
 
 def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
     full_data_cleaned = utils.read_dataset("{}/{}".format(routes.sample_directory,                                                                 routes.samples_cleaned_uni))
@@ -105,6 +123,10 @@ def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
     # de hexadecimal a datos de presión plantar
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     insoleR_dataset = assign_entry_point_and_transform_datasets(insoleR_dataset)
+    
+    # Se inserta una muestra para compensar la perdida de pequeñas muestras del multiplexor 4
+    insoleL_dataset = repare_samples_dataset(insoleL_dataset)
+    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
     
     converse_hex_plantar_pressure(insoleL_dataset)
     converse_hex_plantar_pressure(insoleR_dataset)
@@ -174,8 +196,7 @@ if __name__ == '__main__':
             print("\t\t\t\t\tif display sets to 1, then Observer doesn't display frames")
 
     if recollection:
-        see_and_stomp(time, display)
+        see_and_stomp(time_to_collect, display)
 
     if mix:
         mix_sources_of_data()
-

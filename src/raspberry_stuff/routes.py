@@ -4,7 +4,7 @@ sample_directory    = 'data'
 
 ###############         Routes BLE          ###############
 
-samples_recollect       = 'samples.txt'
+samples_recollect       = 'samples_test.txt'
 samples_without_return  = 'samples_without_return.txt'
 samples_cleaned_uni     = 'samples_cleaned_unitary.csv'
 samples_cleaned_full    = 'samples_cleaned.csv'
