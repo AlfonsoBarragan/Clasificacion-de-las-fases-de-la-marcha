@@ -30,7 +30,6 @@ def observe(time_to_record=10, display=-1):
 
 	# allow the camera to warmup and start the FPS counter
 	print("[INFO] sampling frames from `picamera` module...")
-	time.sleep(2.0)
 	fps = FPS().start()
 
 	stream.close()
@@ -41,7 +40,6 @@ def observe(time_to_record=10, display=-1):
 	# and start the FPS counter
 	print("[INFO] sampling THREADED frames from `picamera` module...")
 	vs = PiVideoStream().start()
-	time.sleep(2.0)
 	fps = FPS().start()
 	frame_list = []
 
@@ -72,8 +70,8 @@ def observe(time_to_record=10, display=-1):
 	write_frames_and_dataset(frame_list)
 
 def write_frames_and_dataset(frame_list):
-	frames_dataset = open(routes.frames_dataset, 'w')
-	frames_dataset.write("Timestamp,Id_frame")
+	frames_dataset = open("{}/{}".format(routes.data_directory , routes.frames_dataset), 'w')
+	frames_dataset.write("Timestamp,Id_frame\n")
 
 	# Parameters progress bar
 	size 	= len(frame_list)
@@ -83,7 +81,7 @@ def write_frames_and_dataset(frame_list):
 	
 	for i in frame_list:
 		timestamp = (i[0] * 1000)
-		frames_dataset.write("{},{}".format(timestamp, frame_list.index(i)))
+		frames_dataset.write("{},{}\n".format(timestamp, frame_list.index(i)))
 		cv2.imwrite("{}/frame_{}.jpg".format(routes.frames_directory, frame_list.index(i)), i[1])
 		
 		index += 1

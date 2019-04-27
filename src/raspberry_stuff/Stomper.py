@@ -8,27 +8,36 @@ import sys, getopt
 
 from utils import printProgressBar
 
+insole_l = "00:a0:50:00:00:11"
+insole_r = "00:a0:50:00:00:02"
+
 def stomp(time_to_recolect=10):
     counter = 1
 
-    os.system("sudo hcitool lecc 00:a0:50:00:00:11")
-    os.system("sudo hcitool lecc 00:a0:50:00:00:02")
+    # Insole_L 
+    os.system("sudo hcitool lecc {}".format(insole_l))
+    
+    # Insole_R
+    os.system("sudo hcitool lecc {}".format(insole_r))
 
-    os.system("sudo hcidump -x -t > {}/{} &".format(routes.sample_directory, routes.samples_recollect))
+    os.system("sudo hcidump -x -t > {}/{} &".format(routes.data_directory, routes.samples_recollect))
     time_init = time.time()
     
     while (time.time() - time_init) < time_to_recolect :
         counter += 1
         
     time_finish = time.time()
-    os.system('sudo kill -9 $(ps -e | grep hcidump)')
+    os.system("sudo hcitool ledc 00:a0:50:00:00:11")
+    os.system("sudo hcitool ledc 00:a0:50:00:00:02")
 
     time_total = time_finish - time_init
-    print("Recolected {} samples in {} seconds".format(int(os.system('wc -l {}/{}'.format(routes.sample_directory, routes.samples_recollect)))/time_total*6, time_total))
+    
+    time.sleep(1)
+    print("Recolected {} samples in {} seconds".format(int(os.system('wc -l {}/{}'.format(routes.data_directory, routes.samples_recollect)))/time_total*6, time_total))
 
 def write_data_to_file(list_samples, output_file_name):
     
-    samples_contain = open("{}/{}".format(routes.sample_directory, output_file_name), 'w')
+    samples_contain = open("{}/{}".format(routes.data_directory, output_file_name), 'w')
     
     for sample_number in range(len(list_samples) - 1):
         samples_contain.write(str(list_samples[sample_number])+"\n")
@@ -39,14 +48,11 @@ def convert_date_to_timestamp(date_list):
     dt_obj = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
     return dt_obj.timestamp() * 1000
 
-def converse_values_hex_to_int(values_list):
-    return 1
-
 def remove_carriage_return():
     print("[*] Eliminando retornos de carro...")
 
-    samples_file            = open("{}/{}".format(routes.sample_directory, routes.samples_recollect), 'r')
-    samples_without_return  = open("{}/{}".format(routes.sample_directory, routes.samples_without_return), 'w') 
+    samples_file            = open("{}/{}".format(routes.data_directory, routes.samples_recollect), 'r')
+    samples_without_return  = open("{}/{}".format(routes.data_directory, routes.samples_without_return), 'w') 
 
     text = samples_file.readlines()
 
@@ -72,8 +78,8 @@ def process_samples():
     remove_carriage_return()
 
 	# Cargar el fichero de datos de las plantillas
-    samples_file    = open("{}/{}".format(routes.sample_directory, routes.samples_without_return), 'r')
-    samples_cleaned = open("{}/{}".format(routes.sample_directory, routes.samples_cleaned_uni), 'w') 
+    samples_file    = open("{}/{}".format(routes.data_directory, routes.samples_without_return), 'r')
+    samples_cleaned = open("{}/{}".format(routes.data_directory, routes.samples_cleaned_uni), 'w') 
 
     # Se crean las expresiones regulares para poder capturar los datos relevantes
     # de cada linea

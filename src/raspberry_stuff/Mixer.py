@@ -27,7 +27,7 @@ def see_and_stomp(time_to_recollect, display=-1):
     thread_sto.start()
 
 def assign_entry_point_and_transform_datasets(dataframe):
-    dataframe_aux = dataframe[(dataframe.Value_20 == '-1')]
+    dataframe_aux = dataframe[(dataframe.Value_17 == '-1')]
     index_entry = int(dataframe_aux.iloc[2].name)
     index_exit  = int(dataframe_aux.last_valid_index()) - 3
 
@@ -36,12 +36,28 @@ def assign_entry_point_and_transform_datasets(dataframe):
 
     return new_dataframe
 
-def converse_hex_plantar_pressure(dataframe_insole):
+def converse_hex_plantar_pressure(dataframe_insole, path):
     
-    for i in range(0, len(dataframe_insole), 4):
-        
-        print("----------------- ITER {} -----------------".format(i))
-        
+    samples_file_def = open(path, 'w')
+    
+    samples_file_def.write("Timestamp_init,Timestamp_end,Date_init,"    +
+                            "Date_end,Source,Sensor_1,Sensor_2,"        +
+                            "Sensor_3,Sensor_4,Sensor_5,Sensor_6,"      +
+                            "Sensor_7,Sensor_8,Sensor_9,Sensor_10,"     +
+                            "Sensor_11,Sensor_12,Sensor_13,Sensor_14,"  +
+                            "Sensor_15,Sensor_16,Sensor_17,Sensor_18,"  +
+                            "Sensor_19,Sensor_20,Sensor_21,Sensor_22,"  +
+                            "Sensor_23,Sensor_24,Sensor_25,Sensor_26,"  +
+                            "Sensor_27,Sensor_28,Sensor_29,Sensor_30,"  +
+                            "Sensor_31,Sensor_32\n")
+    
+    # Parameters for progress bar
+    size = len(dataframe_insole)
+    
+    utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
+    for i in range(0, size, 4):
+                
         mux_1 = []
         mux_2 = []
         mux_3 = []
@@ -65,14 +81,29 @@ def converse_hex_plantar_pressure(dataframe_insole):
         mux_2 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_2)))
         mux_3 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_3)))
         mux_4 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_4)))
-                
-        mux_1_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_1))
-        mux_2_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_2))
-        mux_3_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_3))
-        mux_4_values = struct.unpack(">HHHHHHHH", bytes.fromhex(mux_4))
         
-        print("{}, {}, {}, {}".format(mux_1_values,mux_2_values,mux_3_values,mux_4_values))
         
+        mux_1_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_1))
+        mux_2_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_2))
+        mux_3_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_3))
+        mux_4_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_4))
+        
+        # Se escribe los timestamps, dates y source en el fichero
+        samples_file_def.write("{},{},{},{},{}".format(sample_1.Timestamp,
+                               sample_4.Timestamp, sample_1.Date, sample_4.Date,
+                               sample_1.Source))
+        
+        # Se escribe el valor de los sensores
+        for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
+            samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[0],
+                                   values[1],values[2],values[3],values[4],values[5],
+                                   values[6],values[7]))
+        
+        # Se introduce un salto de linea para continuar el ciclo de escritura
+        samples_file_def.write("\n")
+        
+        utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
         
 def repare_samples_dataset(df):
     
@@ -87,7 +118,7 @@ def repare_samples_dataset(df):
 
     for i in range(size):
         counter += 1
-        if counter % 4 == 0 and len(dataframe) > i:
+        if counter % 4 == 0:
             if dataframe.iloc[i].Value_17 != '-1':
                 
                 if dataframe.iloc[i+1].Value_17 == '-1' and dataframe.iloc[i+2].Value_17 != '-1':
@@ -112,9 +143,18 @@ def repare_samples_dataset(df):
 
     return dataframe
 
-def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
-    full_data_cleaned = utils.read_dataset("{}/{}".format(routes.sample_directory,                                                                 routes.samples_cleaned_uni))
-
+def mix_sources_of_data():
+    full_data_cleaned   = utils.read_dataset("{}/{}".format(routes.data_directory,
+                                                             routes.samples_cleaned_uni))
+    
+    full_frame_data     = utils.read_dataset("{}/{}".format(routes.data_directory,
+                                                             routes.frames_dataset))
+    
+    sources = full_data_cleaned.Source.unique()
+    
+    id_handle_insoleL = sources[0]
+    id_handle_insoleR = sources[1]
+    
     # Divide datasets by insole
     insoleL_dataset = full_data_cleaned[(full_data_cleaned.Source == id_handle_insoleL)]
     insoleR_dataset = full_data_cleaned[(full_data_cleaned.Source == id_handle_insoleR)]
@@ -122,24 +162,22 @@ def mix_sources_of_data(id_handle_insoleL, id_handle_insoleR):
     # Eligue un buen punto inicial omitiendo algunas muestras para comenzar la traducción
     # de hexadecimal a datos de presión plantar
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
-    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleR_dataset)
+    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     
     # Se inserta una muestra para compensar la perdida de pequeñas muestras del multiplexor 4
+    # se requiere dar dos pasadas por dataset para reparar de la mejor manera.
     insoleL_dataset = repare_samples_dataset(insoleL_dataset)
+    insoleL_dataset = repare_samples_dataset(insoleL_dataset)
+
+    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
     insoleR_dataset = repare_samples_dataset(insoleR_dataset)
     
-    converse_hex_plantar_pressure(insoleL_dataset)
-    converse_hex_plantar_pressure(insoleR_dataset)
-
-    # Una vez divididos, hacer el siguiente preproceso:
-    #   -> capturar las muestras de 4 en 4 y asignarles los frames entre  el primer instante
-    #      y el ultimo, algo tipo el metodo de abajo.
-    #   -> Para asignarle un unico frame a cada muestra se me ocurre, que el frame más
-    #      "correcto" es aquel que es más cercano a la recepción de la muestra completa, o en
-    #      otras palabras aquel cuya diferencia con el timestamp de la ultima muestra sea menor.
-    #      De todas maneras lo hablaré con Ivan para ver si lo ve bien. Dejo esta implementación
-    #      para más adelante.
-
+    # Se vuelve a recortar el numero de registros para evitar problemas de falta de muestras
+    insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+    
+    converse_hex_plantar_pressure(insoleL_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_l))
+    converse_hex_plantar_pressure(insoleR_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_r))
 
 def assign_frame_to_sample(df_to_label, df_labels, probe_time):
 
