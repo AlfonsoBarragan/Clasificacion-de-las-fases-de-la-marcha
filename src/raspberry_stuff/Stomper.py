@@ -19,6 +19,9 @@ def stomp(time_to_recolect=10):
     
     # Insole_R
     os.system("sudo hcitool lecc {}".format(insole_r))
+    
+    # Wait until begins the record
+    time.sleep(1)
 
     os.system("sudo hcidump -x -t > {}/{} &".format(routes.data_directory, routes.samples_recollect))
     time_init = time.time()
@@ -27,8 +30,7 @@ def stomp(time_to_recolect=10):
         counter += 1
         
     time_finish = time.time()
-    os.system("sudo hcitool ledc 00:a0:50:00:00:11")
-    os.system("sudo hcitool ledc 00:a0:50:00:00:02")
+    os.system("sudo ./killer.sh")
 
     time_total = time_finish - time_init
     
