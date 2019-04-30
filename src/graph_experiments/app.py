@@ -33,8 +33,10 @@ from kivy.uix.popup import Popup
 from kivy.config import Config
 
 # Other imports
-from os import scandir, getcwd
 import os
+import time
+
+from os import scandir, getcwd
 
 Config.set('graphics', 'width', 1280)
 Config.set('graphics', 'height', 720)
@@ -94,10 +96,12 @@ Builder.load_string('''
     # Draw a background to indicate selection
     canvas.before:
         Color:
-            rgba: (.0, 0.9, .1, .3) if self.selected else (0, 0, 0, 1)
+            rgba:(.0, 0.9, .1, .3) if self.selected else ( (.9, .0, .1, .3) if self.talon else ((.0, .0, .9, .3)if self.puntera else (0, 0, 0, 1)))
+
         Rectangle:
             pos: self.pos
             size: self.size
+
 <frames_recycleview>:
     viewclass: 'SelectableLabel'
     SelectableRecycleBoxLayout:
@@ -108,7 +112,6 @@ Builder.load_string('''
         orientation: 'vertical'
         multiselect: False
         touch_multiselect: False
-
 <Root>:
     text_input: text_input
 
@@ -132,7 +135,6 @@ Builder.load_string('''
             RstDocument:
                 text: text_input.text
                 show_errors: True
-
 <LoadDialog>:
     BoxLayout:
         size: root.size
@@ -151,7 +153,6 @@ Builder.load_string('''
             Button:
                 text: "Load"
                 on_release: root.load(filechooser.path, filechooser.selection)
-
 <SaveDialog>:
     text_input: text_input
     BoxLayout:
@@ -188,13 +189,26 @@ class SelectableRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior,
 
 class SelectableLabel(RecycleDataViewBehavior, Label):
     ''' Add selection support to the Label '''
-    index = None
-    selected = BooleanProperty(False)
-    selectable = BooleanProperty(True)
+    index       = None
+    selected    = BooleanProperty(False)
+    selectable  = BooleanProperty(True)
+
+    talon       = BooleanProperty(False)
+    puntera     = BooleanProperty(False)
 
     def refresh_view_attrs(self, rv, index, data):
         ''' Catch and handle the view changes '''
         self.index  = index
+        
+        if rv.data[index]['talon'] == 1:
+            self.talon = BooleanProperty(True)
+        if rv.data[index]['talon'] == 0:
+            self.talon = BooleanProperty(False)
+        if rv.data[index]['puntera'] == 1:
+            self.puntera = BooleanProperty(True)
+        if rv.data[index]['puntera'] == 0:
+            self.puntera = BooleanProperty(False)
+
         return super(SelectableLabel, self).refresh_view_attrs(
             rv, index, data)
 
@@ -208,6 +222,7 @@ class SelectableLabel(RecycleDataViewBehavior, Label):
     def apply_selection(self, rv, index, is_selected):
         ''' Respond to the selection of items in the view. '''
         self.selected = is_selected
+
         if is_selected:
             print("selection changed to {} ()".format(rv.data[index]['name']))
 
@@ -226,7 +241,7 @@ class frames_recycleview(RecycleView):
         def __init__(self, route, **kwargs):
             super(frames_recycleview, self).__init__(**kwargs)
             frames_list = self.sort_frames_list(self.ls(route))
-            self.data = [{'text': str(x[0]), 'name': x[1]} for x in frames_list]
+            self.data = [{'text': str(x[0]), 'name': x[1], 'talon': 0, 'puntera': 0} for x in frames_list]
 
         def ls(self, ruta = getcwd()):
             return [arch.name for arch in scandir(ruta) if arch.is_file()]
@@ -258,23 +273,22 @@ class MyButton(ButtonBehavior, Image):
 class button_container_img(GridLayout):
     def __init__(self, icon_route, **kwargs):
         super(button_container_img, self).__init__(**kwargs)
-        self.cols = 5
+        self.cols = 6
         
-        self.button_next = MyButton("icons/next.png")
-        self.button_prev = MyButton("icons/previous.png")
-
+        self.button_next            = MyButton("icons/next.png")
+        self.button_prev            = MyButton("icons/previous.png")
         self.button_mark_talon      = MyButton("icons/mark.png")
         self.button_mark_puntera    = MyButton("icons/mark.png")
         self.button_dir             = MyButton("icons/dir.png")
+        self.button_save            = MyButton("icons/save.png") 
 
         self.add_widget(self.button_prev)
         self.add_widget(self.button_next)
-        
         self.add_widget(self.button_mark_talon)
         self.add_widget(self.button_mark_puntera)
         self.add_widget(self.button_dir)
+        self.add_widget(self.button_save)
 
-        
 ################# IMAGES ################### 
 
 class image_container(GridLayout):
@@ -307,6 +321,9 @@ class buttons_and_imgs_cont(GridLayout):
         self.button_bar.button_next.bind(on_press=self.advance_img)
         self.button_bar.button_prev.bind(on_press=self.retrocess_img)
         self.button_bar.button_dir.bind(on_press=self.choose_dir)
+        self.button_bar.button_mark_talon.bind(on_press=self.mark_talon)
+        self.button_bar.button_mark_puntera.bind(on_press=self.mark_puntera)
+        self.button_bar.button_save.bind(on_press=self.show_save)
 
     def advance_img(self, instance):
         if self.images.index_img < len(self.parent.frames_list_rv.data) - 1:
@@ -328,6 +345,43 @@ class buttons_and_imgs_cont(GridLayout):
             self.images.actual_img = Image(source="{}/{}".format(self.images.route, self.images.name_img))
             self.images.add_widget(self.images.actual_img)
 
+    def mark_talon(self, instance):
+        main_window = self.parent
+
+        if not self.images.index_img in main_window.talon or len(main_window.talon) == 0:
+            
+            if not self.images.index_img in main_window.puntera:
+                main_window.talon.append(self.images.index_img)
+                main_window.frames_list_rv.data[self.images.index_img]['talon'] = 1
+            else:
+                main_window.talon.append(self.images.index_img)
+                main_window.puntera.pop(main_window.puntera.index(self.images.index_img))
+
+                main_window.frames_list_rv.data[self.images.index_img]['talon'] = 1
+                main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 0
+        else:
+            main_window.talon.pop(main_window.talon.index(self.images.index_img))
+            main_window.frames_list_rv.data[self.images.index_img]['talon'] = 0
+
+    def mark_puntera(self, instance):
+        main_window = self.parent
+
+        if not self.images.index_img in main_window.puntera or len(main_window.puntera) == 0:
+
+            if not self.images.index_img in main_window.talon:
+                main_window.puntera.append(self.images.index_img)
+                main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 1
+
+            else:
+                main_window.puntera.append(self.images.index_img)
+                main_window.talon.pop(main_window.talon.index(self.images.index_img))
+
+                main_window.frames_list_rv.data[self.images.index_img]['talon'] = 0
+                main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 1
+        else:
+            main_window.puntera.pop(main_window.puntera.index(self.images.index_img))
+            main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 0
+
     def choose_dir(self, instance):
         content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
         self._popup = Popup(title="Load file", content=content,
@@ -338,8 +392,6 @@ class buttons_and_imgs_cont(GridLayout):
         frames_route = os.path.join(path, "")
         frames_route = frames_route[:len(frames_route)-1]
         main_window = self.parent
-        print(frames_route)
-        print("********************************")
 
         main_window.route_frames = frames_route
         main_window.remove_widget(main_window.frames_list_rv)
@@ -353,7 +405,30 @@ class buttons_and_imgs_cont(GridLayout):
         main_window.add_widget(main_window.grid_buttons_imgs)
         
         self.dismiss_popup()
+
+    def show_save(self, instance):
+        content = SaveDialog(save=self.save_marks, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Save file", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
     
+    def save_marks(self, path, instance):
+        file_talon      = open(os.path.join(path, "labeled_talon_hit_{}.csv".format(time.time())), "w")
+        file_puntera    = open(os.path.join(path, "labeled_puntera_hit_{}.csv".format(time.time())), "w")
+
+        main_window = self.parent
+
+        file_talon.write("Frame")
+        file_puntera.write("Frame")
+
+        for hit in main_window.talon:
+            file_talon.write("{}\n".format(hit))
+
+        for hit in main_window.puntera:
+            file_puntera.write("{}\n".format(hit))
+
+        self.dismiss_popup()
+
     def dismiss_popup(self):
         self._popup.dismiss()
 
@@ -381,49 +456,13 @@ class LoadDialog(FloatLayout):
     load = ObjectProperty(None)
     cancel = ObjectProperty(None)
 
-
 class SaveDialog(FloatLayout):
     save = ObjectProperty(None)
     text_input = ObjectProperty(None)
     cancel = ObjectProperty(None)
 
-
-class Root(FloatLayout):
-    loadfile = ObjectProperty(None)
-    savefile = ObjectProperty(None)
-    text_input = ObjectProperty(None)
-
-    def dismiss_popup(self):
-        self._popup.dismiss()
-
-    def show_load(self):
-        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
-        self._popup = Popup(title="Load file", content=content,
-                            size_hint=(0.9, 0.9))
-        self._popup.open()
-
-    def show_save(self):
-        content = SaveDialog(save=self.save, cancel=self.dismiss_popup)
-        self._popup = Popup(title="Save file", content=content,
-                            size_hint=(0.9, 0.9))
-        self._popup.open()
-
-    def load(self, path, filename):
-        with open(os.path.join(path, filename[0])) as stream:
-            self.text_input.text = stream.read()
-
-        self.dismiss_popup()
-
-    def save(self, path, filename):
-        with open(os.path.join(path, filename), 'w') as stream:
-            stream.write(self.text_input.text)
-
-        self.dismiss_popup()
-
-Factory.register('Root', cls=Root)
 Factory.register('LoadDialog', cls=LoadDialog)
 Factory.register('SaveDialog', cls=SaveDialog)
-
 
 ################# EPICAPP ####################
 
