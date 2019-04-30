@@ -24,11 +24,17 @@ from kivy.uix.behaviors import FocusBehavior
 from kivy.uix.recycleview.layout import LayoutSelectionBehavior
 from kivy.uix.image import Image
 from kivy.properties import StringProperty
+from kivy.app import App
+from kivy.uix.floatlayout import FloatLayout
+from kivy.factory import Factory
+from kivy.properties import ObjectProperty
+from kivy.uix.popup import Popup
 
 from kivy.config import Config
 
 # Other imports
 from os import scandir, getcwd
+import os
 
 Config.set('graphics', 'width', 1280)
 Config.set('graphics', 'height', 720)
@@ -81,6 +87,8 @@ class frame_list_tree(FloatLayout):
 
         return tree
 
+################# KIVY ################### 
+
 Builder.load_string('''
 <SelectableLabel>:
     # Draw a background to indicate selection
@@ -101,33 +109,79 @@ Builder.load_string('''
         multiselect: False
         touch_multiselect: False
 
-<icon_button_next>:
-    canvas:
-        Rectangle:
-            source:self.icon
-            pos: self.center
-            size: 30,30
+<Root>:
+    text_input: text_input
 
-<icon_button_prev>:
-    canvas:
-        Rectangle:
-            source:self.icon
-            pos: self.center
-            size: 30,30
-<icon_button_mark>:
-    canvas:
-        Rectangle:
-            source:self.icon
-            pos: self.center
-            size: 30,30
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: 'Load'
+                on_release: root.show_load()
+            Button:
+                text: 'Save'
+                on_release: root.show_save()
 
-<icon_button_dir>:
-    canvas:
-        Rectangle:
-            source:self.icon
-            pos: self.center
-            size: 30,30
+        BoxLayout:
+            TextInput:
+                id: text_input
+                text: ''
+
+            RstDocument:
+                text: text_input.text
+                show_errors: True
+
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
+
+<SaveDialog>:
+    text_input: text_input
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            on_selection: text_input.text = self.selection and self.selection[0] or ''
+
+        TextInput:
+            id: text_input
+            size_hint_y: None
+            height: 30
+            multiline: False
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Save"
+                on_release: root.save(filechooser.path, text_input.text)
 ''')
+
+################# RECYCLEVIEW ################### 
+
 class SelectableRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior,
                                  RecycleBoxLayout):
     ''' Adds selection and focus behaviour to the view. '''
@@ -156,6 +210,15 @@ class SelectableLabel(RecycleDataViewBehavior, Label):
         self.selected = is_selected
         if is_selected:
             print("selection changed to {} ()".format(rv.data[index]['name']))
+
+            self.parent.parent.parent.grid_buttons_imgs.images.index_img = int(rv.data[index]['text'])
+            self.parent.parent.parent.grid_buttons_imgs.images.name_img  = 'frame_{}.jpg'.format(self.parent.parent.parent.grid_buttons_imgs.images.index_img)
+
+            self.parent.parent.parent.grid_buttons_imgs.images.remove_widget(self.parent.parent.parent.grid_buttons_imgs.images.actual_img)
+
+            self.parent.parent.parent.grid_buttons_imgs.images.actual_img = Image(source="{}/{}".format(self.parent.parent.parent.grid_buttons_imgs.images.route, self.parent.parent.parent.grid_buttons_imgs.images.name_img))
+            self.parent.parent.parent.grid_buttons_imgs.images.add_widget(self.parent.parent.parent.grid_buttons_imgs.images.actual_img)
+
         else:
             print("selection removed for {} ()".format(rv.data[index]['name']))
 
@@ -179,70 +242,204 @@ class frames_recycleview(RecycleView):
 
             return list_def
 
-class icon_button_next(Button):
-    icon = "icons/next.png"
+################# BUTTONS ################### 
 
-class icon_button_prev(Button):
-    icon = "icons/previous.png"
+class MyButton(ButtonBehavior, Image):
+    def __init__(self, route,**kwargs):
+        super(MyButton, self).__init__(**kwargs)
+        self.route  = route
+        self.source = route
 
-class icon_button_mark(Button):
-    icon = "icons/mark.png"
+    def on_press(self):
+        self.source = self.route
+    def on_release(self):
+        self.source = self.route
 
-class icon_button_dir(Button):
-    icon = "icons/dir.png"
-    
-class button_container(GridLayout):
+class button_container_img(GridLayout):
     def __init__(self, icon_route, **kwargs):
-        super(button_container, self).__init__(**kwargs)
-        self.cols = 4
+        super(button_container_img, self).__init__(**kwargs)
+        self.cols = 5
         
-        self.button_next = icon_button_next()
-        self.button_prev = icon_button_prev()
-        self.button_mark = icon_button_mark()
-        self.button_dir  = icon_button_dir()
+        self.button_next = MyButton("icons/next.png")
+        self.button_prev = MyButton("icons/previous.png")
+
+        self.button_mark_talon      = MyButton("icons/mark.png")
+        self.button_mark_puntera    = MyButton("icons/mark.png")
+        self.button_dir             = MyButton("icons/dir.png")
 
         self.add_widget(self.button_prev)
         self.add_widget(self.button_next)
-        # self.add_widget(self.button_mark)
-        # self.add_widget(self.button_dir)
+        
+        self.add_widget(self.button_mark_talon)
+        self.add_widget(self.button_mark_puntera)
+        self.add_widget(self.button_dir)
+
+        
+################# IMAGES ################### 
 
 class image_container(GridLayout):
     def __init__(self, route, **kwargs):
         super().__init__(**kwargs)
-        self.cols = 1
+        self.cols       = 1
+
+        self.index_img  = 0 
+        self.name_img   = 'frame_0.jpg'
+        self.route      = route
 
         self.actual_img = Image(source = "{}/frame_0.jpg".format(route))
         self.add_widget(self.actual_img)
+
+################# BUTTONS AND IMAGES ################### 
+
+class buttons_and_imgs_cont(GridLayout):
+    def __init__(self, route_dir, route_icon, **kwargs):
+        super(buttons_and_imgs_cont, self).__init__(**kwargs)
+        self.cols = 1
+        
+        self.images = image_container(route=route_dir)        
+        self.add_widget(self.images)
+
+        self.button_bar = button_container_img(icon_route=route_icon)
+        self.button_bar.size_hint = (1, 0.2)
+
+        self.add_widget(self.button_bar)
+
+        self.button_bar.button_next.bind(on_press=self.advance_img)
+        self.button_bar.button_prev.bind(on_press=self.retrocess_img)
+        self.button_bar.button_dir.bind(on_press=self.choose_dir)
+
+    def advance_img(self, instance):
+        if self.images.index_img < len(self.parent.frames_list_rv.data) - 1:
+            self.images.index_img += 1
+            self.images.name_img  = 'frame_{}.jpg'.format(self.images.index_img)
+
+            self.images.remove_widget(self.images.actual_img)
+
+            self.images.actual_img = Image(source="{}/{}".format(self.images.route, self.images.name_img))
+            self.images.add_widget(self.images.actual_img)
+
+    def retrocess_img(self, instance):
+        if self.images.index_img > 0:
+            self.images.index_img -= 1
+            self.images.name_img  = 'frame_{}.jpg'.format(self.images.index_img)
+
+            self.images.remove_widget(self.images.actual_img)
+
+            self.images.actual_img = Image(source="{}/{}".format(self.images.route, self.images.name_img))
+            self.images.add_widget(self.images.actual_img)
+
+    def choose_dir(self, instance):
+        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Load file", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+    
+    def load(self, path, filename):
+        frames_route = os.path.join(path, "")
+        frames_route = frames_route[:len(frames_route)-1]
+        main_window = self.parent
+        print(frames_route)
+        print("********************************")
+
+        main_window.route_frames = frames_route
+        main_window.remove_widget(main_window.frames_list_rv)
+        main_window.remove_widget(main_window.grid_buttons_imgs)
+
+        main_window.frames_list_rv = frames_recycleview(route=frames_route)
+        main_window.grid_buttons_imgs = buttons_and_imgs_cont(route_dir=main_window.route_frames, route_icon="icons")
+
+        print(main_window.frames_list_rv.data)
+        main_window.add_widget(main_window.frames_list_rv)
+        main_window.add_widget(main_window.grid_buttons_imgs)
+        
+        self.dismiss_popup()
+    
+    def dismiss_popup(self):
+        self._popup.dismiss()
+
+################# MAINWINDOW ################### 
 
 class MainWindow(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cols = 2
+        self.route_frames = "/home/alfonso/Documentos/Proyectos/movida/Clasificacion-de-las-fases-de-la-marcha/src/graph_experiments/icons/frame_aux"
 
-        self.frames_list_rv = frames_recycleview(route="/home/alfonso/Documentos/Proyectos/movida/Clasificacion-de-las-fases-de-la-marcha/src/raspberry_stuff/recorded_frames")
+        self.talon          = []
+        self.puntera        = []
+        self.actual_index   = 0
+
+        self.frames_list_rv = frames_recycleview(route=self.route_frames)
         self.add_widget(self.frames_list_rv)
 
-        self.images = image_container(route="/home/alfonso/Documentos/Proyectos/movida/Clasificacion-de-las-fases-de-la-marcha/src/raspberry_stuff/recorded_frames")
-        self.add_widget(self.images)
+        self.grid_buttons_imgs = buttons_and_imgs_cont(route_dir=self.route_frames, route_icon="icons")
+        self.add_widget(self.grid_buttons_imgs)
 
-        self.button_bar = button_container(icon_route="icons")
-        self.add_widget(self.button_bar)
-        # hacer que los botones:
-        # -> pasen imagenes
-        # -> marquen
-        # -> permitan elegir la ruta
+############## FILEBROWSER ##################
 
-        # Retocar los tamaños de las cosas para que tenga mejor pinta
+class LoadDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
 
-        self.layout_images = GridLayout()
-        self.layout_images.cols = 2
 
+class SaveDialog(FloatLayout):
+    save = ObjectProperty(None)
+    text_input = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+
+
+class Root(FloatLayout):
+    loadfile = ObjectProperty(None)
+    savefile = ObjectProperty(None)
+    text_input = ObjectProperty(None)
+
+    def dismiss_popup(self):
+        self._popup.dismiss()
+
+    def show_load(self):
+        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Load file", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def show_save(self):
+        content = SaveDialog(save=self.save, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Save file", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def load(self, path, filename):
+        with open(os.path.join(path, filename[0])) as stream:
+            self.text_input.text = stream.read()
+
+        self.dismiss_popup()
+
+    def save(self, path, filename):
+        with open(os.path.join(path, filename), 'w') as stream:
+            stream.write(self.text_input.text)
+
+        self.dismiss_popup()
+
+Factory.register('Root', cls=Root)
+Factory.register('LoadDialog', cls=LoadDialog)
+Factory.register('SaveDialog', cls=SaveDialog)
+
+
+################# EPICAPP ####################
 
 class EpicApp(App):
-    title = "KNIGHT"
-    
+    title           = "KNIGHT"
+    frames_route    = ""
+    build_window    = False
+
     def build(self):
-        return MainWindow()
-    
+        main_window = MainWindow()
+        return main_window
+
+
+################# MAIN ################### 
+
 if __name__ == '__main__':
     EpicApp().run()
+
+#############################################
