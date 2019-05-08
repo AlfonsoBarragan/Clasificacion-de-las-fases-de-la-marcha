@@ -105,3 +105,13 @@ venv.bak/
 
 # visual studio code
 .vscode
+
+# datasets
+*.csv
+*.npy
+
+# folders
+models/
+data/
+no_git/
+camera_test/
