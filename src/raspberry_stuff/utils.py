@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn import preprocessing
+from os import scandir, getcwd
+
 
 def read_dataset(path, separator=","):
     return pd.read_csv(path, sep=separator)
@@ -80,3 +82,6 @@ def binarySearch(alist, item):
                 first = midpoint+1
 
     return found, midpoint
+
+def ls(ruta = getcwd()):
+    return [arch.name for arch in scandir(ruta) if arch.is_file()]

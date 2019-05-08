@@ -49,7 +49,7 @@ def observe(time_to_record=10, display=-1):
 		# to have a maximum width of 400 pixels
 		frame = vs.read()
 		frame_list.append([time.time(), frame])
-		frame = imutils.resize(frame, width=400)
+		frame = imutils.resize(frame, width=1280)
 
 		# check to see if the frame should be displayed to our screen
 		if display > 0:

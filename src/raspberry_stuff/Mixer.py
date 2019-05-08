@@ -63,10 +63,14 @@ def converse_hex_plantar_pressure(dataframe_insole, path):
         mux_3 = []
         mux_4 = []
         
-        sample_1 = dataframe_insole.iloc[i]
-        sample_2 = dataframe_insole.iloc[i + 1]
-        sample_3 = dataframe_insole.iloc[i + 2]
-        sample_4 = dataframe_insole.iloc[i + 3]
+        try:
+            sample_1 = dataframe_insole.iloc[i]
+            sample_2 = dataframe_insole.iloc[i + 1]
+            sample_3 = dataframe_insole.iloc[i + 2]
+            sample_4 = dataframe_insole.iloc[i + 3]
+        
+        except Exception:
+            break
         
         mux_1.extend(sample_1[3:19])
         mux_2.extend(sample_2[3:19])

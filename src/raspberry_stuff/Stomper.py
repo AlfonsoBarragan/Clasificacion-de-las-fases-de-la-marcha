@@ -30,6 +30,8 @@ def stomp(time_to_recolect=10):
         counter += 1
         
     time_finish = time.time()
+    
+    time.sleep(0.5)
     os.system("sudo ./killer.sh")
 
     time_total = time_finish - time_init
