@@ -63,10 +63,14 @@ def converse_hex_plantar_pressure(dataframe_insole, path):
         mux_3 = []
         mux_4 = []
         
-        sample_1 = dataframe_insole.iloc[i]
-        sample_2 = dataframe_insole.iloc[i + 1]
-        sample_3 = dataframe_insole.iloc[i + 2]
-        sample_4 = dataframe_insole.iloc[i + 3]
+        try:
+            sample_1 = dataframe_insole.iloc[i]
+            sample_2 = dataframe_insole.iloc[i + 1]
+            sample_3 = dataframe_insole.iloc[i + 2]
+            sample_4 = dataframe_insole.iloc[i + 3]
+        
+        except Exception:
+            break
         
         mux_1.extend(sample_1[3:19])
         mux_2.extend(sample_2[3:19])
@@ -82,11 +86,13 @@ def converse_hex_plantar_pressure(dataframe_insole, path):
         mux_3 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_3)))
         mux_4 = reduce((lambda x, y: x + y), list(map(lambda x:x[2:] , mux_4)))
         
-        
         mux_1_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_1))
         mux_2_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_2))
         mux_3_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_3))
-        mux_4_values = struct.unpack("!HHHHHHHH", bytes.fromhex(mux_4))
+        
+        mux_4_values        = struct.unpack("!HHHHHH", bytes.fromhex(mux_4[:24]))
+        mux_4_values_rest   = struct.unpack("<HH", bytes.fromhex(mux_4[24:]))
+        mux_4_values        += mux_4_values_rest
         
         # Se escribe los timestamps, dates y source en el fichero
         samples_file_def.write("{},{},{},{},{}".format(sample_1.Timestamp,
@@ -118,7 +124,7 @@ def repare_samples_dataset(df):
 
     for i in range(size):
         counter += 1
-        if counter % 4 == 0:
+        if counter % 4 == 0 and len(dataframe) > i + 2:
             if dataframe.iloc[i].Value_17 != '-1':
                 
                 if dataframe.iloc[i+1].Value_17 == '-1' and dataframe.iloc[i+2].Value_17 != '-1':
@@ -179,14 +185,39 @@ def mix_sources_of_data():
     converse_hex_plantar_pressure(insoleL_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_l))
     converse_hex_plantar_pressure(insoleR_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_r))
 
-def assign_frame_to_sample(df_to_label, df_labels, probe_time):
+def assign_frame_to_sample(df_frames, df_samples):
 
-  for i in df_labels["UUID"]:
-    aux = df_to_label[(int(i) <= df_to_label.UUID ) & (int(i) >= (df_to_label.UUID - probe_time))]
+    df_samples_first_timestamp = df_samples.iloc[0].Timestamp_init 
+    df_samples_last_timestamp  = df_samples.iloc[len(df_samples) - 1].Timestamp_init 
+    
+    df_frames_crop = df_frames[(df_frames.Timestamp >= df_samples_first_timestamp) & 
+                               (df_frames.Timestamp <= df_samples_last_timestamp) ]    
 
-    if not (aux.empty):
-        df_to_label.loc[aux.index, 'attack'] = 1
+    df_samples['Frame'] = '0'
+    
+    # Parameters for progress bar
+    size  = len(df_samples)
+    
+    utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
+    
+    for i in range(len(df_samples)):
+        sample = df_samples.iloc[i]
+        
+        df_frames_in_this_sample = df_frames_crop.copy()
+        
+        if len(df_frames_in_this_sample) == 0:
+            df_samples.loc[i, 'Frame'] = str(int(df_samples.iloc[i-1].Frame) + 1)
+            
+        elif len(df_frames_in_this_sample) == 1:
+            df_samples.loc[i, 'Frame'] = df_frames_in_this_sample.Id_frame
+        
+        else:
+            df_frames_in_this_sample['Diff'] = df_frames_in_this_sample['Timestamp'].apply(lambda x: abs(x-sample.Timestamp_init))
+            frame_selected = df_frames_in_this_sample[(df_frames_in_this_sample.Diff == df_frames_in_this_sample['Diff'].min())]
+            df_samples.loc[i, 'Frame'] = frame_selected.iloc[0].Id_frame
+
+        utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
 if __name__ == '__main__':
     fullCmdArguments = sys.argv
