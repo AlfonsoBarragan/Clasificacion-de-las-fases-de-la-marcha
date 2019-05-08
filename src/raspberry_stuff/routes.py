@@ -14,3 +14,7 @@ samples_full_r          = 'insoleR_dataset.csv'
 
 frames_directory    = 'recorded_frames'
 frames_dataset      = 'frames_dataset.csv'
+
+###############         Routes CAM          ###############
+
+icons_route         = 'resources/icons'
