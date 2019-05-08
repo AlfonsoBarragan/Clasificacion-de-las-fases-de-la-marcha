@@ -1,5 +1,8 @@
 import pandas as pd
 from sklearn import preprocessing
+from os import scandir, getcwd
+import random
+
 
 def read_dataset(path, separator=","):
     return pd.read_csv(path, sep=separator)
@@ -25,10 +28,24 @@ def divide_datasets(df_merged, percentage=0.67):
     
     df_divide = df_merged.sample(frac=1)
     df_train = df_divide[:int((len(df_divide))*percentage)]
-    df_test = df_divide[int((len(df_divide))*percentage):]
-    
+    df_test = df_divide[int((len(df_divide))*percentage):]    
     
     return df_train, df_test
+
+def divide_files(list_of_files, percentage=0.67):
+
+    list_train  = []
+    list_test   = []
+    
+    for i in range(len(list_of_files)):
+        i_list = random.randint(1, 100)
+
+        if i_list <= percentage * 100:
+            list_train.append(list_of_files[i])
+        else:
+            list_test.append(list_of_files[i])
+
+    return list_train, list_test
 
 def to_csv(path,dataframe):
     dataframe.to_csv(path)
@@ -54,7 +71,18 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     if iteration == total: 
         print()
 
+def insert_row_in_pos(pos, row_value, df):
+	# Funciona con objetos de tipo Series de pandas.
+	
+	data_half_low, data_half_big = df[:pos], df[pos:]
+	
+	data_half_low = data_half_low.append(row_value, ignore_index = True)
+	data_half_low = data_half_low.append(data_half_big, ignore_index = True)
+	
+	return data_half_low
+
 def binarySearch(alist, item):
+    # Code from https://stackoverflow.com/questions/34420006/binary-search-python-3-5
     first = 0
     last = len(alist)-1
     found = False
@@ -70,3 +98,16 @@ def binarySearch(alist, item):
                 first = midpoint+1
 
     return found, midpoint
+
+def ls(ruta = getcwd()):
+    # Code from https://es.stackoverflow.com/questions/24278/
+    return [arch.name for arch in scandir(ruta) if arch.is_file()]
+
+def write_list_to_file(list_to_write, output_file):
+    file = open(output_file, 'w')
+        
+    for element in list_to_write:
+        file.write("'{}',".format(element))
+
+    file.close()
+    
