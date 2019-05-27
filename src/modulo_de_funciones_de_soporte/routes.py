@@ -1,3 +1,20 @@
+
+#full_data       = 'data/full_data.csv'
+full_data       = 'data/wine_data.csv'
+
+data_train      = 'data/train.csv'
+data_test       = 'data/test.csv'
+data_sintectic  = 'data/sintectic.csv'
+
+route_report    = 'models/report_{}.csv'
+
+############# Bluetooth routes  #############
+
+samples_l = 'data/samples_l.txt'
+samples_d = 'data/samples_d.txt'
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
 ###############         Routes GENERAL      ###############
 
 data_directory    = 'data'

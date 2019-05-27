@@ -36,9 +36,8 @@ from kivy.config import Config
 import os
 import time
 
-import routes
-
 from os import scandir, getcwd
+from modulo_de_funciones_de_soporte import routes
 
 Config.set('graphics', 'width', 1280)
 Config.set('graphics', 'height', 720)

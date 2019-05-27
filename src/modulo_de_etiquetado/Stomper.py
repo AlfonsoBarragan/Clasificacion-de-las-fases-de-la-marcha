@@ -1,12 +1,12 @@
 import os
 import time
-import routes
 import re
 import datetime
 
 import sys, getopt
 
-from utils import printProgressBar
+from modulo_de_funciones_de_soporte.utils import printProgressBar
+from modulo_de_funciones_de_soporte import routes
 
 insole_l = "00:a0:50:00:00:11"
 insole_r = "00:a0:50:00:00:02"

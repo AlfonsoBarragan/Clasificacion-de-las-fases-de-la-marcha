@@ -14,8 +14,8 @@ import imutils
 import time
 import cv2
 import sys, getopt
-import routes
-from utils import printProgressBar
+from modulo_de_funciones_de_soporte import routes
+from modulo_de_funciones_de_soporte.utils import printProgressBar
 
 def observe(time_to_record=10, display=-1):
 	# initialize the camera and stream

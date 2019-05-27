@@ -14,8 +14,8 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
-import utils as data_utilities
-import routes
+from modulo_de_funciones_de_soporte import utils as data_utilities
+from modulo_de_funciones_de_soporte import routes
 
 
 

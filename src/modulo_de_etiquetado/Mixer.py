@@ -9,8 +9,9 @@ import pandas as pd
 from functools import reduce
 
 # Internal libraries
-import utils
-import routes
+
+from modulo_de_funciones_de_soporte import utils
+from modulo_de_funciones_de_soporte import routes
 
 def throw_observer(time_to_collect, display):
     os.system("python3 Observer.py -t {} -d {}".format(time_to_collect, display))
