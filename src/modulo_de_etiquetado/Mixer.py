@@ -36,7 +36,7 @@ def assign_entry_point_and_transform_datasets(dataframe):
 
     return new_dataframe
 
-def converse_hex_plantar_pressure(dataframe_insole, path):
+def converse_hex_plantar_pressure(dataframe_insole, insole_id, path):
     
     samples_file_def = open(path, 'w')
     
@@ -100,11 +100,16 @@ def converse_hex_plantar_pressure(dataframe_insole, path):
                                sample_1.Source))
         
         # Se escribe el valor de los sensores
-        for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
-            samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[0],
-                                   values[1],values[2],values[3],values[4],values[5],
-                                   values[6],values[7]))
-        
+        if insole_id == 0:
+            for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
+                samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[7],
+                                        values[6],values[5],values[4],values[3],values[2],
+                                        values[1],values[0]))
+        else:
+            for values in [mux_4_values, mux_3_values, mux_2_values, mux_1_values]:
+                samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[0],
+                                        values[1],values[2],values[3],values[4],values[5],
+                                        values[6],values[7]))
         # Se introduce un salto de linea para continuar el ciclo de escritura
         samples_file_def.write("\n")
         
@@ -182,8 +187,8 @@ def mix_sources_of_data():
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     
-    converse_hex_plantar_pressure(insoleL_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_l))
-    converse_hex_plantar_pressure(insoleR_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_r))
+    converse_hex_plantar_pressure(insoleL_dataset, 0, "{}/{}".format(routes.data_directory, routes.samples_full_l))
+    converse_hex_plantar_pressure(insoleR_dataset, 1, "{}/{}".format(routes.data_directory, routes.samples_full_r))
 
 def assign_frame_to_sample(df_frames, df_samples):
 

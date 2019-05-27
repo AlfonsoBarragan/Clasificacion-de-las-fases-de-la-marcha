@@ -98,7 +98,7 @@ Builder.load_string('''
     # Draw a background to indicate selection
     canvas.before:
         Color:
-            rgba:(.0, 0.9, .1, .3) if self.selected else ( (.9, .0, .1, .3) if self.talon else ((.0, .0, .9, .3)if self.puntera else (0, 0, 0, 1)))
+            rgba:(.0, 0.9, .1, .3) if self.selected else ( (.9, .0, .1, .3) if self.talon_right else ((.0, .0, .9, .3)if self.puntera_right else (0, 0, 0, 1)))
 
         Rectangle:
             pos: self.pos
@@ -195,21 +195,33 @@ class SelectableLabel(RecycleDataViewBehavior, Label):
     selected    = BooleanProperty(False)
     selectable  = BooleanProperty(True)
 
-    talon       = BooleanProperty(False)
-    puntera     = BooleanProperty(False)
+    talon_right       = BooleanProperty(False)
+    puntera_right     = BooleanProperty(False)
+    
+    talon_left       = BooleanProperty(False)
+    puntera_left     = BooleanProperty(False)
 
     def refresh_view_attrs(self, rv, index, data):
         ''' Catch and handle the view changes '''
         self.index  = index
         
-        if rv.data[index]['talon'] == 1:
-            self.talon = BooleanProperty(True)
-        if rv.data[index]['talon'] == 0:
-            self.talon = BooleanProperty(False)
-        if rv.data[index]['puntera'] == 1:
-            self.puntera = BooleanProperty(True)
-        if rv.data[index]['puntera'] == 0:
-            self.puntera = BooleanProperty(False)
+        if rv.data[index]['talon_right'] == 1:
+            self.talon_right = BooleanProperty(True)
+        if rv.data[index]['talon_right'] == 0:
+            self.talon_right = BooleanProperty(False)
+        if rv.data[index]['puntera_right'] == 1:
+            self.puntera_right = BooleanProperty(True)
+        if rv.data[index]['puntera_right'] == 0:
+            self.puntera_right = BooleanProperty(False)
+        
+        if rv.data[index]['talon_left'] == 1:
+            self.talon_left = BooleanProperty(True)
+        if rv.data[index]['talon_left'] == 0:
+            self.talon_left = BooleanProperty(False)
+        if rv.data[index]['puntera_left'] == 1:
+            self.puntera_left = BooleanProperty(True)
+        if rv.data[index]['puntera_left'] == 0:
+            self.puntera_left = BooleanProperty(False)
 
         return super(SelectableLabel, self).refresh_view_attrs(
             rv, index, data)
@@ -243,7 +255,7 @@ class frames_recycleview(RecycleView):
         def __init__(self, route, **kwargs):
             super(frames_recycleview, self).__init__(**kwargs)
             frames_list = self.sort_frames_list(self.ls(route))
-            self.data = [{'text': str(x[0]), 'name': x[1], 'talon': 0, 'puntera': 0} for x in frames_list]
+            self.data = [{'text': str(x[0]), 'name': x[1], 'talon_right': 0, 'puntera_right': 0, 'talon_left': 0, 'puntera_left': 0} for x in frames_list]
 
         def ls(self, ruta = getcwd()):
             return [arch.name for arch in scandir(ruta) if arch.is_file()]
@@ -277,17 +289,28 @@ class button_container_img(GridLayout):
         super(button_container_img, self).__init__(**kwargs)
         self.cols = 6
         
-        self.button_next            = MyButton("{}/next.png".format(icon_route))
-        self.button_prev            = MyButton("{}/previous.png".format(icon_route))
-        self.button_mark_talon      = MyButton("{}/mark.png".format(icon_route))
-        self.button_mark_puntera    = MyButton("{}/mark.png".format(icon_route))
-        self.button_dir             = MyButton("{}/dir.png".format(icon_route))
-        self.button_save            = MyButton("{}/save.png".format(icon_route)) 
+        self.button_next                    = MyButton("{}/next.png".format(icon_route))
+        self.button_prev                    = MyButton("{}/previous.png".format(icon_route))
+        
+        self.button_mark_talon_right        = MyButton("{}/mark.png".format(icon_route))
+        self.button_mark_puntera_right      = MyButton("{}/mark.png".format(icon_route))
+        
+        self.button_mark_talon_left        = MyButton("{}/mark.png".format(icon_route))
+        self.button_mark_puntera_left      = MyButton("{}/mark.png".format(icon_route))
+        
+
+        self.button_dir                     = MyButton("{}/dir.png".format(icon_route))
+        self.button_save                    = MyButton("{}/save.png".format(icon_route)) 
 
         self.add_widget(self.button_prev)
         self.add_widget(self.button_next)
-        self.add_widget(self.button_mark_talon)
-        self.add_widget(self.button_mark_puntera)
+
+        self.add_widget(self.button_mark_talon_right)
+        self.add_widget(self.button_mark_puntera_right)
+        
+        self.add_widget(self.button_mark_talon_left)
+        self.add_widget(self.button_mark_puntera_left)
+        
         self.add_widget(self.button_dir)
         self.add_widget(self.button_save)
 
@@ -322,9 +345,14 @@ class buttons_and_imgs_cont(GridLayout):
 
         self.button_bar.button_next.bind(on_press=self.advance_img)
         self.button_bar.button_prev.bind(on_press=self.retrocess_img)
+        
+        self.button_bar.button_mark_talon_right.bind(on_press=self.mark_talon_right)
+        self.button_bar.button_mark_puntera_right.bind(on_press=self.mark_puntera_right)
+        
+        self.button_bar.button_mark_talon_left.bind(on_press=self.mark_talon_left)
+        self.button_bar.button_mark_puntera_left.bind(on_press=self.mark_puntera_left)
+        
         self.button_bar.button_dir.bind(on_press=self.choose_dir)
-        self.button_bar.button_mark_talon.bind(on_press=self.mark_talon)
-        self.button_bar.button_mark_puntera.bind(on_press=self.mark_puntera)
         self.button_bar.button_save.bind(on_press=self.show_save)
 
     def advance_img(self, instance):
@@ -347,42 +375,80 @@ class buttons_and_imgs_cont(GridLayout):
             self.images.actual_img = Image(source="{}/{}".format(self.images.route, self.images.name_img))
             self.images.add_widget(self.images.actual_img)
 
-    def mark_talon(self, instance):
+    def mark_talon_right(self, instance):
         main_window = self.parent
 
-        if not self.images.index_img in main_window.talon or len(main_window.talon) == 0:
+        if not self.images.index_img in main_window.talon_right or len(main_window.talon_right) == 0:
             
-            if not self.images.index_img in main_window.puntera:
-                main_window.talon.append(self.images.index_img)
-                main_window.frames_list_rv.data[self.images.index_img]['talon'] = 1
+            if not self.images.index_img in main_window.puntera_right:
+                main_window.talon_right.append(self.images.index_img)
+                main_window.frames_list_rv.data[self.images.index_img]['talon_right'] = 1
             else:
-                main_window.talon.append(self.images.index_img)
-                main_window.puntera.pop(main_window.puntera.index(self.images.index_img))
+                main_window.talon_right.append(self.images.index_img)
+                main_window.puntera_right.pop(main_window.puntera_right.index(self.images.index_img))
 
-                main_window.frames_list_rv.data[self.images.index_img]['talon'] = 1
-                main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 0
+                main_window.frames_list_rv.data[self.images.index_img]['talon_right'] = 1
+                main_window.frames_list_rv.data[self.images.index_img]['puntera_right'] = 0
         else:
-            main_window.talon.pop(main_window.talon.index(self.images.index_img))
-            main_window.frames_list_rv.data[self.images.index_img]['talon'] = 0
+            main_window.talon_right.pop(main_window.talon_right.index(self.images.index_img))
+            main_window.frames_list_rv.data[self.images.index_img]['talon_right'] = 0
 
-    def mark_puntera(self, instance):
+    def mark_talon_left(self, instance):
         main_window = self.parent
 
-        if not self.images.index_img in main_window.puntera or len(main_window.puntera) == 0:
+        if not self.images.index_img in main_window.talon_left or len(main_window.talon_left) == 0:
+            
+            if not self.images.index_img in main_window.puntera_left:
+                main_window.talon_left.append(self.images.index_img)
+                main_window.frames_list_rv.data[self.images.index_img]['talon_left'] = 1
+            else:
+                main_window.talon_left.append(self.images.index_img)
+                main_window.puntera_left.pop(main_window.puntera_left.index(self.images.index_img))
 
-            if not self.images.index_img in main_window.talon:
-                main_window.puntera.append(self.images.index_img)
-                main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 1
+                main_window.frames_list_rv.data[self.images.index_img]['talon_left'] = 1
+                main_window.frames_list_rv.data[self.images.index_img]['puntera_left'] = 0
+        else:
+            main_window.talon_left.pop(main_window.talon_left.index(self.images.index_img))
+            main_window.frames_list_rv.data[self.images.index_img]['talon_left'] = 0
+
+
+    def mark_puntera_right(self, instance):
+        main_window = self.parent
+
+        if not self.images.index_img in main_window.puntera_right or len(main_window.puntera_right) == 0:
+
+            if not self.images.index_img in main_window.talon_right:
+                main_window.puntera_right.append(self.images.index_img)
+                main_window.frames_list_rv.data[self.images.index_img]['puntera_right'] = 1
 
             else:
-                main_window.puntera.append(self.images.index_img)
-                main_window.talon.pop(main_window.talon.index(self.images.index_img))
+                main_window.puntera_right.append(self.images.index_img)
+                main_window.talon_right.pop(main_window.talon_right.index(self.images.index_img))
 
-                main_window.frames_list_rv.data[self.images.index_img]['talon'] = 0
-                main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 1
+                main_window.frames_list_rv.data[self.images.index_img]['talon_right'] = 0
+                main_window.frames_list_rv.data[self.images.index_img]['puntera_right'] = 1
         else:
-            main_window.puntera.pop(main_window.puntera.index(self.images.index_img))
-            main_window.frames_list_rv.data[self.images.index_img]['puntera'] = 0
+            main_window.puntera_right.pop(main_window.puntera_right.index(self.images.index_img))
+            main_window.frames_list_rv.data[self.images.index_img]['puntera_right'] = 0
+
+    def mark_puntera_left(self, instance):
+        main_window = self.parent
+
+        if not self.images.index_img in main_window.puntera_left or len(main_window.puntera_left) == 0:
+
+            if not self.images.index_img in main_window.talon_left:
+                main_window.puntera_left.append(self.images.index_img)
+                main_window.frames_list_rv.data[self.images.index_img]['puntera_left'] = 1
+
+            else:
+                main_window.puntera_left.append(self.images.index_img)
+                main_window.talon_left.pop(main_window.talon_left.index(self.images.index_img))
+
+                main_window.frames_list_rv.data[self.images.index_img]['talon_left'] = 0
+                main_window.frames_list_rv.data[self.images.index_img]['puntera_left'] = 1
+        else:
+            main_window.puntera_left.pop(main_window.puntera_left.index(self.images.index_img))
+            main_window.frames_list_rv.data[self.images.index_img]['puntera_left'] = 0
 
     def choose_dir(self, instance):
         content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
@@ -415,19 +481,26 @@ class buttons_and_imgs_cont(GridLayout):
         self._popup.open()
     
     def save_marks(self, path, instance):
-        file_talon      = open(os.path.join(path, "labeled_talon_hit_{}.csv".format(time.time())), "w")
-        file_puntera    = open(os.path.join(path, "labeled_puntera_hit_{}.csv".format(time.time())), "w")
+        file_talon      = open(os.path.join(path, "labeled_heel_strike_{}.csv".format(time.time())), "w")
+        file_puntera    = open(os.path.join(path, "labeled_toe_off_{}.csv".format(time.time())), "w")
 
         main_window = self.parent
 
-        file_talon.write("Frame")
-        file_puntera.write("Frame")
+        file_talon.write("Frame,Foot")
+        file_puntera.write("Frame,Foot")
 
-        for hit in main_window.talon:
-            file_talon.write("{}\n".format(hit))
+        for hit in main_window.talon_right:
+            file_talon.write("{},{}\n".format(hit, 'right'))
+        
+        for hit in main_window.talon_left:
+            file_talon.write("{},{}\n".format(hit, 'left'))
 
-        for hit in main_window.puntera:
-            file_puntera.write("{}\n".format(hit))
+        for hit in main_window.puntera_right:
+            file_puntera.write("{},{}\n".format(hit, 'right'))
+        
+        for hit in main_window.puntera_left:
+            file_puntera.write("{},{}\n".format(hit, 'left'))
+
 
         self.dismiss_popup()
 
@@ -442,8 +515,12 @@ class MainWindow(GridLayout):
         self.cols = 2
         self.route_frames = "{}/{}/frames".format(os.getcwd(), routes.icons_route)
 
-        self.talon          = []
-        self.puntera        = []
+        self.talon_right    = []
+        self.puntera_right  = []
+
+        self.talon_left    = []
+        self.puntera_left  = []
+
         self.actual_index   = 0
 
         self.frames_list_rv = frames_recycleview(route=self.route_frames)
