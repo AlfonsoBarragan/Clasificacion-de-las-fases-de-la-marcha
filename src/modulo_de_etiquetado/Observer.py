@@ -19,7 +19,7 @@ from modulo_de_funciones_de_soporte.utils import printProgressBar
 
 def observe(time_to_record=10, display=-1):
 	# initialize the camera and stream
-	frames_to_record = time_to_record * 240
+	frames_to_record = time_to_record * 120
         
 	camera = PiCamera()
 	camera.resolution = (1280, 720)
@@ -30,6 +30,7 @@ def observe(time_to_record=10, display=-1):
 
 	# allow the camera to warmup and start the FPS counter
 	print("[INFO] sampling frames from `picamera` module...")
+	time.sleep(2.0)
 	fps = FPS().start()
 
 	stream.close()
@@ -40,6 +41,7 @@ def observe(time_to_record=10, display=-1):
 	# and start the FPS counter
 	print("[INFO] sampling THREADED frames from `picamera` module...")
 	vs = PiVideoStream().start()
+	time.sleep(2.0)
 	fps = FPS().start()
 	frame_list = []
 
@@ -49,7 +51,7 @@ def observe(time_to_record=10, display=-1):
 		# to have a maximum width of 400 pixels
 		frame = vs.read()
 		frame_list.append([time.time(), frame])
-		frame = imutils.resize(frame, width=1280)
+		frame = imutils.resize(frame, width=400)
 
 		# check to see if the frame should be displayed to our screen
 		if display > 0:
@@ -68,6 +70,7 @@ def observe(time_to_record=10, display=-1):
 	vs.stop()
 	
 	write_frames_and_dataset(frame_list)
+
 
 def write_frames_and_dataset(frame_list):
 	frames_dataset = open("{}/{}".format(routes.data_directory , routes.frames_dataset), 'w')
