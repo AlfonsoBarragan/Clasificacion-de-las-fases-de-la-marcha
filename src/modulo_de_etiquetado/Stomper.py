@@ -11,7 +11,7 @@ from modulo_de_funciones_de_soporte import routes
 insole_l = "00:a0:50:00:00:11"
 insole_r = "00:a0:50:00:00:02"
 
-def stomp(time_to_recolect=10):
+def stomp(path, time_to_recolect=10):
     counter = 1
 
     # Insole_L 
@@ -23,7 +23,7 @@ def stomp(time_to_recolect=10):
     # Wait until begins the record
     time.sleep(1)
 
-    os.system("sudo hcidump -x -t > {}/{} &".format(routes.data_directory, routes.samples_recollect))
+    os.system("sudo hcidump -x -t > {}/{} &".format(path, routes.samples_recollect))
     time_init = time.time()
     
     while (time.time() - time_init) < time_to_recolect :
@@ -37,11 +37,11 @@ def stomp(time_to_recolect=10):
     time_total = time_finish - time_init
     
     time.sleep(1)
-    print("Recolected {} samples in {} seconds".format(int(os.system('wc -l {}/{}'.format(routes.data_directory, routes.samples_recollect)))/time_total*6, time_total))
+    print("Recolected {} samples in {} seconds".format(int(os.system('wc -l {}/{}'.format(path, routes.samples_recollect)))/time_total*6, time_total))
 
-def write_data_to_file(list_samples, output_file_name):
+def write_data_to_file(list_samples, output_file_name, path):
     
-    samples_contain = open("{}/{}".format(routes.data_directory, output_file_name), 'w')
+    samples_contain = open("{}/{}".format(path, output_file_name), 'w')
     
     for sample_number in range(len(list_samples) - 1):
         samples_contain.write(str(list_samples[sample_number])+"\n")
@@ -52,11 +52,11 @@ def convert_date_to_timestamp(date_list):
     dt_obj = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
     return dt_obj.timestamp() * 1000
 
-def remove_carriage_return():
+def remove_carriage_return(path):
     print("[*] Eliminando retornos de carro...")
 
-    samples_file            = open("{}/{}".format(routes.data_directory, routes.samples_recollect), 'r')
-    samples_without_return  = open("{}/{}".format(routes.data_directory, routes.samples_without_return), 'w') 
+    samples_file            = open("{}/{}".format(path, routes.samples_recollect), 'r')
+    samples_without_return  = open("{}/{}".format(path, routes.samples_without_return), 'w') 
 
     text = samples_file.readlines()
 
@@ -77,13 +77,13 @@ def remove_carriage_return():
 
     print("[*] Retornos de carro eliminados exitosamente!")
 
-def process_samples():
+def process_samples(path):
     # Eliminar los retornos de carro para leer bien el fichero
-    remove_carriage_return()
+    remove_carriage_return(path)
 
 	# Cargar el fichero de datos de las plantillas
-    samples_file    = open("{}/{}".format(routes.data_directory, routes.samples_without_return), 'r')
-    samples_cleaned = open("{}/{}".format(routes.data_directory, routes.samples_cleaned_uni), 'w') 
+    samples_file    = open("{}/{}".format(path, routes.samples_without_return), 'r')
+    samples_cleaned = open("{}/{}".format(path, routes.samples_cleaned_uni), 'w') 
 
     # Se crean las expresiones regulares para poder capturar los datos relevantes
     # de cada linea
@@ -169,8 +169,8 @@ if __name__ == '__main__':
     
     argument_list = fullCmdArguments[1:]
     
-    unix_options  = "pt:h"
-    gnu_options   = ["process","time", "help"]
+    unix_options  = "ct:hp:"
+    gnu_options   = ["clean","time", "help", "path"]
     
     try:
         arguments, values = getopt.getopt(argument_list, unix_options, gnu_options)
@@ -182,11 +182,25 @@ if __name__ == '__main__':
     for current_arg, current_value in arguments:
         if current_arg in ("-t", "--time"):
             print("Beggining stomp for {} seconds".format(current_value))
-            stomp(int(current_value))
+            time = current_value
+            collect = True
+
         elif current_arg in ("-h", "--help"):
             print("-p , --process: \t\tclean and prepare the raw values from InGait to be used")
             print("-t {number}, --time {number}: \tset the time to recollect data from InGait")
-
-        elif current_arg in ("-p", "--process"):
+        
+        elif current_arg in ("-p", "--path"):
+            print("Setting path for data in: {}".format(current_value))
+            path = current_value
+        
+        elif current_arg in ("-c", "--clean"):
             print("Processing samples file")
-            process_samples()
+            clean = True
+            
+    if collect and path is not None:
+        stomp(path, time)
+
+    if clean and path is not None:    
+        process_samples(path)
+        
+        

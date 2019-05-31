@@ -13,21 +13,30 @@ from functools import reduce
 from modulo_de_funciones_de_soporte import utils
 from modulo_de_funciones_de_soporte import routes
 
-def throw_observer(time_to_collect, display):
-    os.system("python3 Observer.py -t {} -d {}".format(time_to_collect, display))
+def throw_observer(path, time_to_collect, display):
+    # Collect data
+    os.system("python3 Observer.py -p {} -t {} -d {}".format(path, time_to_collect, display))
 
-def throw_stomper(time_to_collect):
-    os.system("python3 Stomper.py -t {} ".format(time_to_collect))
+def throw_stomper(path, time_to_collect):
+    # Collect data
+    os.system("python3 Stomper.py -p {} -t {} ".format(path, time_to_collect))
+    
+    # Clean the whites in data
+    os.system("python3 Stomper.py -p {} -c".format(path))
 
-def see_and_stomp(time_to_recollect, display=-1):
+def see_and_stomp(time_to_recollect, path, display=-1):
     # Create two threads as follows
-    thread_obs = threading.Thread(target=throw_observer, args=[time_to_recollect,display])
-    thread_sto = threading.Thread(target=throw_stomper, args=[time_to_recollect])
+    thread_obs = threading.Thread(target=throw_observer, args=[path,time_to_recollect,display])
+    thread_sto = threading.Thread(target=throw_stomper, args=[path,time_to_recollect])
 
+    # Start to execute the threads, and wait until they stops
     thread_obs.start()
     thread_sto.start()
 
 def assign_entry_point_and_transform_datasets(dataframe):
+    # Locate a point where it completes a full read of the sensors, and remove from it to the first in order
+    # to begin in a common point
+
     dataframe_aux = dataframe[(dataframe.Value_17 == '-1')]
     index_entry = int(dataframe_aux.iloc[2].name)
     index_exit  = int(dataframe_aux.last_valid_index()) - 3
@@ -38,9 +47,10 @@ def assign_entry_point_and_transform_datasets(dataframe):
     return new_dataframe
 
 def converse_hex_plantar_pressure(dataframe_insole, insole_id, path):
-    
+    # Open a file to write
     samples_file_def = open(path, 'w')
     
+    # Write the data attributes
     samples_file_def.write("Timestamp_init,Timestamp_end,Date_init,"    +
                             "Date_end,Source,Sensor_1,Sensor_2,"        +
                             "Sensor_3,Sensor_4,Sensor_5,Sensor_6,"      +
@@ -107,7 +117,7 @@ def converse_hex_plantar_pressure(dataframe_insole, insole_id, path):
                                         values[6],values[5],values[4],values[3],values[2],
                                         values[1],values[0]))
         else:
-            for values in [mux_4_values, mux_3_values, mux_2_values, mux_1_values]:
+            for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
                 samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[0],
                                         values[1],values[2],values[3],values[4],values[5],
                                         values[6],values[7]))
@@ -225,13 +235,33 @@ def assign_frame_to_sample(df_frames, df_samples):
 
         utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
+def create_directories_estructure(subject, number_exp):
+    actual_directories = utils.ls(routes.data_directory)
+    
+    if subject not in actual_directories:
+        os.system("mkdir {}/{}".format(routes.data_directory, subject))
+        os.system("mkdir {}/{}/{}".format(routes.data_directory, subject, number_exp))
+
+    else:
+        inside_subject = utils.ls("{}/{}".format(routes.data_directory, subject))        
+        
+        while number_exp in inside_subject:
+            number_exp += "1"
+
+        os.system("mkdir {}/{}/{}".format(routes.data_directory, subject, number_exp))
+        os.system("mkdir {}/{}/{}/{}".format(routes.data_directory, subject, number_exp, routes.frames_directory))
+    
+    return "{}/{}/{}".format(routes.data_directory, subject, number_exp)
+        
+
+
 if __name__ == '__main__':
     fullCmdArguments = sys.argv
 
     argument_list = fullCmdArguments[1:]
 
-    unix_options  = "rmt:d:h"
-    gnu_options   = ["recollect", "mix", "time", "display", "help"]
+    unix_options  = "rmt:d:hs:e:"
+    gnu_options   = ["recollect", "mix", "time", "display", "help", "subject", "experiment"]
 
     #Default values
     recollection        = False
@@ -263,6 +293,14 @@ if __name__ == '__main__':
             print("Setting display to: {}".format(current_value))
             display = current_value
 
+        elif current_arg in ("-s", "--subject"):
+            identifier = hash(current_value)
+            print("Subject: {} ({})".format(current_value, identifier))
+
+        elif current_arg in ("-e", "--experiment"):
+            experiment_number = current_value
+            print("Number of the current experiment: {}".format(current_value))
+            
         elif current_arg in ("-h", "--help"):
             print("-r , --recollect: \t\t\tEnables the function of recollect data")
             print("-m , --mix: \t\t\t\tEnables the function of mix the sources of data")
@@ -271,6 +309,7 @@ if __name__ == '__main__':
             print("\t\t\t\t\tif display sets to 1, then Observer doesn't display frames")
 
     if recollection:
+        path = create_directories_estructure(identifier, experiment_number)
         see_and_stomp(time_to_collect, display)
 
     if mix:
