@@ -291,11 +291,11 @@ class button_container_img(GridLayout):
         self.button_next                    = MyButton("{}/next.png".format(icon_route))
         self.button_prev                    = MyButton("{}/previous.png".format(icon_route))
         
-        self.button_mark_talon_right        = MyButton("{}/mark.png".format(icon_route))
-        self.button_mark_puntera_right      = MyButton("{}/mark.png".format(icon_route))
+        self.button_mark_talon_right        = MyButton("{}/mark_heel_strike_right.png".format(icon_route))
+        self.button_mark_puntera_right      = MyButton("{}/mark_toe_off_right.png".format(icon_route))
         
-        self.button_mark_talon_left        = MyButton("{}/mark.png".format(icon_route))
-        self.button_mark_puntera_left      = MyButton("{}/mark.png".format(icon_route))
+        self.button_mark_talon_left        = MyButton("{}/mark_heel_strike_left.png".format(icon_route))
+        self.button_mark_puntera_left      = MyButton("{}/mark_toe_off_left.png".format(icon_route))
         
 
         self.button_dir                     = MyButton("{}/dir.png".format(icon_route))

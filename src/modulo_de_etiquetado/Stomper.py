@@ -194,7 +194,7 @@ if __name__ == '__main__':
             path = current_value
         
         elif current_arg in ("-c", "--clean"):
-            print("Processing samples file")
+            print("Cleaning samples file...")
             clean = True
             
     if collect and path is not None:

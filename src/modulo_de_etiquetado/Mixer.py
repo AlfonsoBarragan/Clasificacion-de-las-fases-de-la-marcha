@@ -241,6 +241,7 @@ def create_directories_estructure(subject, number_exp):
     if subject not in actual_directories:
         os.system("mkdir {}/{}".format(routes.data_directory, subject))
         os.system("mkdir {}/{}/{}".format(routes.data_directory, subject, number_exp))
+        os.system("mkdir {0}/{1}/{2}/{3} && mkdir {0}/{1}/{2}/{4}".format(routes.data_directory, subject, number_exp, routes.data_directory, routes.frames_directory))
 
     else:
         inside_subject = utils.ls("{}/{}".format(routes.data_directory, subject))        

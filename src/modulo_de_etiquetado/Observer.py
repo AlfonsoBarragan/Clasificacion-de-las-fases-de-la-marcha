@@ -3,7 +3,6 @@
 # python picamera_fps_demo.py --display 1
 
 # import the necessary packages
-from __future__ import print_function
 from imutils.video.pivideostream import PiVideoStream
 from imutils.video import FPS
 from picamera.array import PiRGBArray
@@ -14,16 +13,18 @@ import imutils
 import time
 import cv2
 import sys, getopt
+import numpy as np
+
 from modulo_de_funciones_de_soporte import routes
-from modulo_de_funciones_de_soporte.utils import printProgressBar
+from modulo_de_funciones_de_soporte.utils import printProgressBar, ls
 
 def observe(path, time_to_record=10, display=-1):
 	# initialize the camera and stream
-	frames_to_record = time_to_record * 120
+	frames_to_record = time_to_record * 120 * 3.7467
         
 	camera = PiCamera()
 	camera.resolution = (1280, 720)
-	camera.framerate = 120
+	camera.framerate = 300
 	rawCapture = PiRGBArray(camera, size=(1280, 720))
 	stream = camera.capture_continuous(rawCapture, format="bgr",
 		use_video_port=True)
@@ -46,13 +47,11 @@ def observe(path, time_to_record=10, display=-1):
 	frame_list = []
 
 	# loop over some frames...this time using the threaded stream
-	time_init = time.time()
-	while time.time() - time_init > 0:
+	while fps._numFrames < frames_to_record:
 		# grab the frame from the threaded video stream and resize it
 		# to have a maximum width of 400 pixels
 		frame = vs.read()
 		frame_list.append([time.time(), frame])
-		frame = imutils.resize(frame, width=400)
 
 		# check to see if the frame should be displayed to our screen
 		if display > 0:
@@ -86,7 +85,7 @@ def write_frames_and_dataset(frame_list, path_for_data):
 	for i in frame_list:
 		timestamp = (i[0] * 1000)
 		frames_dataset.write("{},{}\n".format(timestamp, frame_list.index(i)))
-		cv2.imwrite("{}/{}/frame_{}.jpg".format(path_for_data, routes.frames_directory, frame_list.index(i)), i[1])
+		cv2.imwrite("{}/{}/frame_{}.jpg".format(path_for_data, routes.frames_directory, frame_list.index(i)), np.flipud(i[1]))
 		
 		index += 1
 		printProgressBar(index, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -113,6 +112,7 @@ if __name__ == '__main__':
 		if current_arg in ("-t", "--time"):
 			print("Beggining observancy for {} seconds".format(current_value))
 			time_to_collect = current_value
+			collect = True
 		
 		elif current_arg in ("-d","--display"):
 			print("Setting display to: {}".format(current_value))
@@ -127,4 +127,5 @@ if __name__ == '__main__':
 			print("-d {0 or 1}, --display {0 or 1}: \tif display sets to 0, then Observer display frames.")
 			print("\t\t\t\t\tif display sets to 1, then Observer doesn't display frames")
 
-	observe(path, int(time_to_collect), int(display))
+	if collect and path is not None:
+		observe(path, int(time_to_collect), int(display))
