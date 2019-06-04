@@ -295,7 +295,7 @@ if __name__ == '__main__':
             display = current_value
 
         elif current_arg in ("-s", "--subject"):
-            identifier = hash(current_value)
+            identifier = current_value
             print("Subject: {} ({})".format(current_value, identifier))
 
         elif current_arg in ("-e", "--experiment"):
@@ -311,7 +311,7 @@ if __name__ == '__main__':
 
     if recollection:
         path = create_directories_estructure(identifier, experiment_number)
-        see_and_stomp(time_to_collect, display)
+        see_and_stomp(time_to_collect, path, display)
 
     if mix:
         mix_sources_of_data()

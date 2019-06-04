@@ -24,7 +24,7 @@ def observe(path, time_to_record=10, display=-1):
         
 	camera = PiCamera()
 	camera.resolution = (1280, 720)
-	camera.framerate = 300
+	camera.framerate = 120
 	rawCapture = PiRGBArray(camera, size=(1280, 720))
 	stream = camera.capture_continuous(rawCapture, format="bgr",
 		use_video_port=True)
