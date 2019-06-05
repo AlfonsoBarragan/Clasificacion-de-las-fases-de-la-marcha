@@ -179,10 +179,13 @@ if __name__ == '__main__':
         print(str(err))
         sys.exit(2)
     
+    collect = None
+    clean = None
+    
     for current_arg, current_value in arguments:
         if current_arg in ("-t", "--time"):
             print("Beggining stomp for {} seconds".format(current_value))
-            time = current_value
+            time_to_collect = float(current_value)
             collect = True
 
         elif current_arg in ("-h", "--help"):
@@ -198,7 +201,7 @@ if __name__ == '__main__':
             clean = True
             
     if collect and path is not None:
-        stomp(path, time)
+        stomp(path, time_to_collect)
 
     if clean and path is not None:    
         process_samples(path)

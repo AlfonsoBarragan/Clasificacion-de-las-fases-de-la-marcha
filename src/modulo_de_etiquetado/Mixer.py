@@ -22,7 +22,7 @@ def throw_stomper(path, time_to_collect):
     os.system("python3 Stomper.py -p {} -t {} ".format(path, time_to_collect))
     
     # Clean the whites in data
-    os.system("python3 Stomper.py -p {} -c".format(path))
+    # os.system("python3 Stomper.py -p {} -c".format(path))
 
 def see_and_stomp(time_to_recollect, path, display=-1):
     # Create two threads as follows
