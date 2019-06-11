@@ -11,6 +11,7 @@ from numpy import corrcoef, transpose, arange
 from pylab import pcolor, show, colorbar, xticks, yticks
 import numpy as np
 import pandas as pd
+import cv2
 
 import scipy
 from scipy import cluster
@@ -35,10 +36,12 @@ from scipy.stats import randint as sp_randint
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
+from sklearn.externals import joblib
 from sklearn.externals.six import StringIO  
 from IPython.display import Image  
 from sklearn.tree import export_graphviz
 import pydot
+import pickle
 
 # 0. Load Data
 df = pd.read_csv("../modulo_de_etiquetado/data/insoleR_dataset.csv")
@@ -90,14 +93,6 @@ sns.heatmap(R, mask=mask, cmap=cmap, vmax=.8,
 sns.heatmap(R2, mask=mask2, cmap=cmap2, vmax=.8,
             square=True, xticklabels=2, yticklabels=2,
             linewidths=.5, cbar_kws={"shrink": .5}, ax=ax)
-
-def normalize_data(dataframe):
-    min_max_scaler  = preprocessing.MinMaxScaler()
-    norm_values         = min_max_scaler.fit_transform(dataframe)
-    
-    dataframe_norm  = pd.DataFrame(data=norm_values, columns=dataframe.columns) 
-     
-    return dataframe_norm
 
 def calculatePCA(dataframe, path):
 
@@ -167,7 +162,7 @@ def hierarchical_clustering(datanorm):
     # http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.cluster.hierarchy.dendrogram.html
     cluster.hierarchy.dendrogram(clusters, color_threshold=15, orientation='left')
     
-    cut = 45 # !!!! ad-hoc
+    cut = 190 # !!!! ad-hoc
     labels = cluster.hierarchy.fcluster(clusters, cut , criterion = 'distance')
     print ('Number of clusters %d' % (len(set(labels))))
     plt.show()
@@ -203,7 +198,7 @@ def random_forest(train, test):
     
     X, y      = x_train, y_train
     
-    clf_rf = RandomForestClassifier(n_estimators=1, random_state = 0)
+    clf_rf = RandomForestClassifier(n_estimators=3, random_state = 0)
     """
     param_dist = {"max_depth": [None],
               "max_features": sp_randint(1, 13),
@@ -244,14 +239,54 @@ def random_forest(train, test):
       export_graphviz(clf_rf.estimators_[birch], out_file='tree_from_forest.dot',
                       feature_names=list(test.drop(['groups'], axis=1)),
                       filled=True, rounded=True,
-                      special_characters=True, class_names = ['Standing','Moving'])
+                      special_characters=True, class_names = ['Swing','Ground', 'Movement'])
       (graph,) = pydot.graph_from_dot_file('tree_from_forest.dot')
       graph.write_png('trees/tree_from_forest_birch_{}.png'.format(birch))
     
     return clf_rf
 
+def load_data():
+    df_s1_e2 = pd.read_csv("data/sujeto_1/2/data/samples_l_with_frames.csv")
+    df_s1_e2.drop(df_s1_e2.columns[[0]], axis=1, inplace=True)
 
+    
+    df_s2_e1 = pd.read_csv("data/sujeto_2/1/data/samples_l_with_frames.csv")
+    df_s2_e2 = pd.read_csv("data/sujeto_2/2/data/dataset_combined_frames_samples_insoleL.csv")
+    df_s2_e1.drop(df_s2_e1.columns[[0]], axis=1, inplace=True)
+    df_s2_e2.drop(df_s2_e2.columns[[0]], axis=1, inplace=True)
 
+    df_s3_e1 = pd.read_csv("data/sujeto_3/1/data/samples_l_with_frames.csv")
+    df_s3_e2 = pd.read_csv("data/sujeto_3/2/data/samples_l_with_frames.csv")
+    df_s3_e1.drop(df_s3_e1.columns[[0]], axis=1, inplace=True)
+    df_s3_e2.drop(df_s3_e2.columns[[0]], axis=1, inplace=True)
+    
+    df_combined = pd.concat([df_s1_e2, df_s2_e1, df_s2_e2, df_s3_e1, df_s3_e2], sort=False)
+    
+    df_divided_1, df_divided_2 = utils.divide_datasets(df_combined, 0.5)
+
+    df_combined_pressure = df_divided_2.drop(columns=['Timestamp_init', 'Timestamp_end', 'Date_init','Date_end','Source','Subject','experiment','Frame'])
+    
+    df_combined_pressure = normalize_data(df_combined_pressure)
+    
+    labels = hierarchical_clustering(df_combined_pressure)
+    
+def flip_horizontal_frames(directory, new_directory):
+    # Load all the images names
+    images_names_list = utils.ls(directory)
+    
+    utils.printProgressBar(0, len(images_names_list), prefix = 'Flipping better than Enrique Domingo Pérez Vergara:', suffix = 'Complete', length = 50)
+    
+    for image in images_names_list:
+
+        img_aux = cv2.imread("{}/{}".format(directory, image))
+        img_aux = cv2.flip(img_aux, 1)
+        
+        cv2.imwrite("{}/{}".format(new_directory, image), img_aux)
+        
+        utils.printProgressBar(images_names_list.index(image), len(images_names_list), prefix = 'Flipping better than Enrique Domingo Pérez Vergara:', suffix = 'Complete', length = 50)
+        
+# Limpiar los outlayers antes de hacer nada
+    
 # GRUPOS
     # 1 - Giro
     # 2 - 
