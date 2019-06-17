@@ -41,3 +41,12 @@ icons_route         = 'resources/icons'
 ###############         Routes FRAMES LABELED       ###############
 
 labeled_frames_route = 'frames_labeled'
+
+###############         Preproccess Exp             ###############
+
+subject_list    = ['sujeto_1', 'sujeto_2', 'sujeto_3', 'sujeto_4']
+experiment_list = [['2'], ['1', '2'], ['1', '2'], ['1']]
+
+models_route = 'models'
+
+path_plot = 'Graphics'

@@ -284,11 +284,3 @@ def flip_horizontal_frames(directory, new_directory):
         cv2.imwrite("{}/{}".format(new_directory, image), img_aux)
         
         utils.printProgressBar(images_names_list.index(image), len(images_names_list), prefix = 'Flipping better than Enrique Domingo Pérez Vergara:', suffix = 'Complete', length = 50)
-        
-# Limpiar los outlayers antes de hacer nada
-    
-# GRUPOS
-    # 1 - Giro
-    # 2 - 
-    # 3 - Giro
-    # 4 - Levantamiento de puntera
