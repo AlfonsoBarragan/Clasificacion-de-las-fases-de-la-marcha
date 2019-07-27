@@ -9,24 +9,34 @@ import pandas as pd
 from functools import reduce
 
 # Internal libraries
-import utils
-import routes
 
-def throw_observer(time_to_collect, display):
-    os.system("python3 Observer.py -t {} -d {}".format(time_to_collect, display))
+from modulo_de_funciones_de_soporte import utils
+from modulo_de_funciones_de_soporte import routes
 
-def throw_stomper(time_to_collect):
-    os.system("python3 Stomper.py -t {} ".format(time_to_collect))
+def throw_observer(path, time_to_collect, display):
+    # Collect data
+    os.system("python3 Observer.py -p {} -t {} -d {}".format(path, time_to_collect, display))
 
-def see_and_stomp(time_to_recollect, display=-1):
+def throw_stomper(path, time_to_collect):
+    # Collect data
+    os.system("python3 Stomper.py -p {} -t {} ".format(path, time_to_collect))
+    
+    # Clean the whites in data
+    # os.system("python3 Stomper.py -p {} -c".format(path))
+
+def see_and_stomp(time_to_recollect, path, display=-1):
     # Create two threads as follows
-    thread_obs = threading.Thread(target=throw_observer, args=[time_to_recollect,display])
-    thread_sto = threading.Thread(target=throw_stomper, args=[time_to_recollect])
+    thread_obs = threading.Thread(target=throw_observer, args=[path,time_to_recollect,display])
+    thread_sto = threading.Thread(target=throw_stomper, args=[path,time_to_recollect])
 
+    # Start to execute the threads, and wait until they stops
     thread_obs.start()
     thread_sto.start()
 
 def assign_entry_point_and_transform_datasets(dataframe):
+    # Locate a point where it completes a full read of the sensors, and remove from it to the first in order
+    # to begin in a common point
+
     dataframe_aux = dataframe[(dataframe.Value_17 == '-1')]
     index_entry = int(dataframe_aux.iloc[2].name)
     index_exit  = int(dataframe_aux.last_valid_index()) - 3
@@ -36,10 +46,11 @@ def assign_entry_point_and_transform_datasets(dataframe):
 
     return new_dataframe
 
-def converse_hex_plantar_pressure(dataframe_insole, path):
-    
+def converse_hex_plantar_pressure(dataframe_insole, insole_id, path):
+    # Open a file to write
     samples_file_def = open(path, 'w')
     
+    # Write the data attributes
     samples_file_def.write("Timestamp_init,Timestamp_end,Date_init,"    +
                             "Date_end,Source,Sensor_1,Sensor_2,"        +
                             "Sensor_3,Sensor_4,Sensor_5,Sensor_6,"      +
@@ -54,7 +65,7 @@ def converse_hex_plantar_pressure(dataframe_insole, path):
     # Parameters for progress bar
     size = len(dataframe_insole)
     
-    utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    utils.printProgressBar(0, size, prefix = 'Conversing hexadecimal to plantar pressure:', suffix = 'Complete', length = 50)
 
     for i in range(0, size, 4):
                 
@@ -100,15 +111,20 @@ def converse_hex_plantar_pressure(dataframe_insole, path):
                                sample_1.Source))
         
         # Se escribe el valor de los sensores
-        for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
-            samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[0],
-                                   values[1],values[2],values[3],values[4],values[5],
-                                   values[6],values[7]))
-        
+        if insole_id == 0:
+            for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
+                samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[7],
+                                        values[6],values[5],values[4],values[3],values[2],
+                                        values[1],values[0]))
+        else:
+            for values in [mux_1_values, mux_2_values, mux_3_values, mux_4_values]:
+                samples_file_def.write(",{},{},{},{},{},{},{},{}".format(values[0],
+                                        values[1],values[2],values[3],values[4],values[5],
+                                        values[6],values[7]))
         # Se introduce un salto de linea para continuar el ciclo de escritura
         samples_file_def.write("\n")
         
-        utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        utils.printProgressBar(i, size, prefix = 'Conversing hexadecimal to plantar pressure:', suffix = 'Complete', length = 50)
 
         
 def repare_samples_dataset(df):
@@ -120,41 +136,55 @@ def repare_samples_dataset(df):
     # Parameters for progress bar
     size  = len(dataframe)
     
-    utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
+    utils.printProgressBar(0, size, prefix = 'Reparing samples:', suffix = 'Complete', length = 50)
+    lost_packages = 0
+    
     for i in range(size):
         counter += 1
         if counter % 4 == 0 and len(dataframe) > i + 2:
-            if dataframe.iloc[i].Value_17 != '-1':
+            if dataframe.iloc[i].Value_18 != '-1':
                 
-                if dataframe.iloc[i+1].Value_17 == '-1' and dataframe.iloc[i+2].Value_17 != '-1':
+                if dataframe.iloc[i+1].Value_18 == '-1' and dataframe.iloc[i+2].Value_18 != '-1':
                     # Borrar el siguiente
                     dataframe = dataframe.drop([dataframe.index[i]], axis=0)
                     counter = 0
-                
-                elif dataframe.iloc[i+2].Value_17 == '-1':
+                    lost_packages += 1
+                    
+                elif dataframe.iloc[i+2].Value_18 == '-1':
                     # Borrar los dos siguientes
                     dataframe = dataframe.drop([dataframe.index[i],dataframe.index[i+1]], axis=0)
                     counter = 0
+                    lost_packages += 1
                     
                 else:
+                    
                     dataframe = utils.insert_row_in_pos(i, data_series_last_mux_4, dataframe)
                     counter = 0
                 
             else:
-                data_series_last_mux_4 = dataframe.iloc[i]
-                counter = 0
                 
-        utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
+                if dataframe.iloc[i-1].Value_18 == '-1' or dataframe.iloc[i-2].Value_18 == '-1' or dataframe.iloc[i-3].Value_18 == '-1':
+                    dataframe = dataframe.drop([dataframe.index[i], dataframe.index[i-1], 
+                                                dataframe.index[i-2], dataframe.index[i-3]], axis=0)
+                    counter = 0
+                    lost_packages += 1
+                    
+                else:    
+                    data_series_last_mux_4 = dataframe.iloc[i]
+                    counter = 0
+                
+        utils.printProgressBar(i, size, prefix = 'Reparing samples:', suffix = 'Complete', length = 50)
+    
+    print("Lost packages: {}, Total packages: {}".format(lost_packages, len(df)))
+    
     return dataframe
 
-def mix_sources_of_data():
-    full_data_cleaned   = utils.read_dataset("{}/{}".format(routes.data_directory,
-                                                             routes.samples_cleaned_uni))
+def mix_sources_of_data(path, subject, experiment):
+    full_data_cleaned   = utils.read_dataset("{}/{}/{}".format(path, routes.data_directory,
+                                                                 routes.samples_cleaned_uni))
     
-    full_frame_data     = utils.read_dataset("{}/{}".format(routes.data_directory,
-                                                             routes.frames_dataset))
+    full_frame_data     = utils.read_dataset("{}/{}/{}".format(path, routes.data_directory,
+                                                                 routes.frames_dataset))
     
     sources = full_data_cleaned.Source.unique()
     
@@ -168,24 +198,42 @@ def mix_sources_of_data():
     # Eligue un buen punto inicial omitiendo algunas muestras para comenzar la traducción
     # de hexadecimal a datos de presión plantar
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+    insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+
+    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     
     # Se inserta una muestra para compensar la perdida de pequeñas muestras del multiplexor 4
     # se requiere dar dos pasadas por dataset para reparar de la mejor manera.
     insoleL_dataset = repare_samples_dataset(insoleL_dataset)
     insoleL_dataset = repare_samples_dataset(insoleL_dataset)
+    insoleL_dataset = repare_samples_dataset(insoleL_dataset)
 
     insoleR_dataset = repare_samples_dataset(insoleR_dataset)
     insoleR_dataset = repare_samples_dataset(insoleR_dataset)
-    
+    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
+
     # Se vuelve a recortar el numero de registros para evitar problemas de falta de muestras
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     
-    converse_hex_plantar_pressure(insoleL_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_l))
-    converse_hex_plantar_pressure(insoleR_dataset, "{}/{}".format(routes.data_directory, routes.samples_full_r))
+    converse_hex_plantar_pressure(insoleL_dataset, 0, "{}/{}/{}".format(path, routes.data_directory, routes.samples_full_l))
+    converse_hex_plantar_pressure(insoleR_dataset, 1, "{}/{}/{}".format(path, routes.data_directory, routes.samples_full_r))
 
-def assign_frame_to_sample(df_frames, df_samples):
+    # Se cargan los dataframes referentes a las muestras de presión plantar
+    df_insoleL  = pd.read_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_full_l))
+    df_insoleR  = pd.read_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_full_r))
+    
+    # Se combina con el dataset de los frames
+    assign_frame_to_sample(full_frame_data, df_insoleL, subject, experiment)
+    assign_frame_to_sample(full_frame_data, df_insoleR, subject, experiment)
+    
+    # Se escribe el dataset resultante
+    df_insoleL.to_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_l_with_frames))
+    
+    
+    
+def assign_frame_to_sample(df_frames, df_samples, subject, experiment):
 
     df_samples_first_timestamp = df_samples.iloc[0].Timestamp_init 
     df_samples_last_timestamp  = df_samples.iloc[len(df_samples) - 1].Timestamp_init 
@@ -193,39 +241,64 @@ def assign_frame_to_sample(df_frames, df_samples):
     df_frames_crop = df_frames[(df_frames.Timestamp >= df_samples_first_timestamp) & 
                                (df_frames.Timestamp <= df_samples_last_timestamp) ]    
 
-    df_samples['Frame'] = '0'
+    df_samples['Frame']         = '0'
+    df_samples['Subject']       = subject
+    df_samples['experiment']    = experiment
     
     # Parameters for progress bar
     size  = len(df_samples)
     
-    utils.printProgressBar(0, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    utils.printProgressBar(0, size, prefix = 'Assign frame to samples:', suffix = 'Complete', length = 50)
 
     
     for i in range(len(df_samples)):
         sample = df_samples.iloc[i]
         
-        df_frames_in_this_sample = df_frames_crop.copy()
+        df_frames_in_this_sample = df_frames_crop[(df_frames_crop.Timestamp >= sample.Timestamp_init) &
+                                                  (df_frames_crop.Timestamp <= sample.Timestamp_end)]        
+
         
         if len(df_frames_in_this_sample) == 0:
-            df_samples.loc[i, 'Frame'] = str(int(df_samples.iloc[i-1].Frame) + 1)
+            df_samples.loc[i, 'Frame'] = int(df_samples.iloc[i-1].Frame) + 1
             
         elif len(df_frames_in_this_sample) == 1:
-            df_samples.loc[i, 'Frame'] = df_frames_in_this_sample.Id_frame
+            df_samples.loc[i, 'Frame'] = df_frames_in_this_sample.iloc[0].Id_frame
         
         else:
             df_frames_in_this_sample['Diff'] = df_frames_in_this_sample['Timestamp'].apply(lambda x: abs(x-sample.Timestamp_init))
             frame_selected = df_frames_in_this_sample[(df_frames_in_this_sample.Diff == df_frames_in_this_sample['Diff'].min())]
             df_samples.loc[i, 'Frame'] = frame_selected.iloc[0].Id_frame
 
-        utils.printProgressBar(i, size, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        utils.printProgressBar(i, size, prefix = 'Assign frame to samples:', suffix = 'Complete', length = 50)
+11
+def create_directories_estructure(subject, number_exp):
+    actual_directories = utils.ls(routes.data_directory)
+    
+    if subject not in actual_directories:
+        os.system("mkdir {}/{}".format(routes.data_directory, subject))
+        os.system("mkdir {}/{}/{}".format(routes.data_directory, subject, number_exp))
+        os.system("mkdir {0}/{1}/{2}/{3} && mkdir {0}/{1}/{2}/{4}".format(routes.data_directory, subject, number_exp, routes.data_directory, routes.frames_directory))
+
+    else:
+        inside_subject = utils.ls("{}/{}".format(routes.data_directory, subject))        
+        
+        while number_exp in inside_subject:
+            number_exp += "1"
+
+        os.system("mkdir {}/{}/{}".format(routes.data_directory, subject, number_exp))
+        os.system("mkdir {}/{}/{}/{}".format(routes.data_directory, subject, number_exp, routes.frames_directory))
+    
+    return "{}/{}/{}".format(routes.data_directory, subject, number_exp)
+        
+
 
 if __name__ == '__main__':
     fullCmdArguments = sys.argv
 
     argument_list = fullCmdArguments[1:]
 
-    unix_options  = "rmt:d:h"
-    gnu_options   = ["recollect", "mix", "time", "display", "help"]
+    unix_options  = "rmt:d:hs:e:"
+    gnu_options   = ["recollect", "mix", "time", "display", "help", "subject", "experiment"]
 
     #Default values
     recollection        = False
@@ -257,6 +330,14 @@ if __name__ == '__main__':
             print("Setting display to: {}".format(current_value))
             display = current_value
 
+        elif current_arg in ("-s", "--subject"):
+            identifier = current_value
+            print("Subject: {} ({})".format(current_value, identifier))
+
+        elif current_arg in ("-e", "--experiment"):
+            experiment_number = current_value
+            print("Number of the current experiment: {}".format(current_value))
+            
         elif current_arg in ("-h", "--help"):
             print("-r , --recollect: \t\t\tEnables the function of recollect data")
             print("-m , --mix: \t\t\t\tEnables the function of mix the sources of data")
@@ -265,7 +346,9 @@ if __name__ == '__main__':
             print("\t\t\t\t\tif display sets to 1, then Observer doesn't display frames")
 
     if recollection:
-        see_and_stomp(time_to_collect, display)
+        path = create_directories_estructure(identifier, experiment_number)
+        see_and_stomp(time_to_collect, path, display)
 
     if mix:
-        mix_sources_of_data()
+        mix_sources_of_data("{}/{}/{}".format(routes.data_directory, identifier, experiment_number), 
+                                                identifier, experiment_number)

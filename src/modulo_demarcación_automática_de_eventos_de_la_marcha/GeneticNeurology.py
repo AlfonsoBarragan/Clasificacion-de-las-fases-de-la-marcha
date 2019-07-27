@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import datetime as dt
-
 from sklearn.metrics import confusion_matrix, precision_score
 from sklearn.metrics import recall_score, f1_score, cohen_kappa_score
 
@@ -9,11 +7,16 @@ from keras.models import Sequential
 from keras.utils import np_utils
 from keras.layers.core import Dense, Activation, Dropout
 
+import random
+import os
+
+import datetime as dt
+import numpy as np
 import pandas as pd
 
-import utils as data_utilities
-import routes
-import random
+from modulo_de_funciones_de_soporte import utils as data_utilities
+from modulo_de_funciones_de_soporte import routes
+
 
 
 class Neural_Network_G:
@@ -53,7 +56,7 @@ class Neural_Network_G:
         
     def assign_data_randomize(self):
         
-        full_data_train = data_utilities.read_dataset(routes.full_data, ";")
+        full_data_train = data_utilities.read_dataset(routes.full_data)
         
         data_train_to_fit, data_train_to_test = data_utilities.divide_datasets(
                                                 full_data_train, percentage = 0.87)
@@ -305,7 +308,7 @@ def individual_evaluation(model, data_test, labels_test, number_classes, model_i
 
 
 	true_negative = []
-	for i in range(num_classes):
+	for i in range(number_classes):
 		temp = np.delete(cm1, i, 0)
 		temp = np.delete(temp, i, 1)  # delete ith column
 		true_negative.append(sum(sum(temp)))
