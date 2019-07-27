@@ -137,7 +137,8 @@ def repare_samples_dataset(df):
     size  = len(dataframe)
     
     utils.printProgressBar(0, size, prefix = 'Reparing samples:', suffix = 'Complete', length = 50)
-
+    lost_packages = 0
+    
     for i in range(size):
         counter += 1
         if counter % 4 == 0 and len(dataframe) > i + 2:
@@ -147,11 +148,13 @@ def repare_samples_dataset(df):
                     # Borrar el siguiente
                     dataframe = dataframe.drop([dataframe.index[i]], axis=0)
                     counter = 0
-                
+                    lost_packages += 1
+                    
                 elif dataframe.iloc[i+2].Value_18 == '-1':
                     # Borrar los dos siguientes
                     dataframe = dataframe.drop([dataframe.index[i],dataframe.index[i+1]], axis=0)
                     counter = 0
+                    lost_packages += 1
                     
                 else:
                     
@@ -164,12 +167,16 @@ def repare_samples_dataset(df):
                     dataframe = dataframe.drop([dataframe.index[i], dataframe.index[i-1], 
                                                 dataframe.index[i-2], dataframe.index[i-3]], axis=0)
                     counter = 0
+                    lost_packages += 1
+                    
                 else:    
                     data_series_last_mux_4 = dataframe.iloc[i]
                     counter = 0
                 
         utils.printProgressBar(i, size, prefix = 'Reparing samples:', suffix = 'Complete', length = 50)
-
+    
+    print("Lost packages: {}, Total packages: {}".format(lost_packages, len(df)))
+    
     return dataframe
 
 def mix_sources_of_data(path, subject, experiment):
@@ -182,19 +189,19 @@ def mix_sources_of_data(path, subject, experiment):
     sources = full_data_cleaned.Source.unique()
     
     id_handle_insoleL = sources[0]
-#    id_handle_insoleR = sources[0]
+    id_handle_insoleR = sources[1]
     
     # Divide datasets by insole
     insoleL_dataset = full_data_cleaned[(full_data_cleaned.Source == id_handle_insoleL)]
-#    insoleR_dataset = full_data_cleaned[(full_data_cleaned.Source == id_handle_insoleR)]
+    insoleR_dataset = full_data_cleaned[(full_data_cleaned.Source == id_handle_insoleR)]
 
     # Eligue un buen punto inicial omitiendo algunas muestras para comenzar la traducción
     # de hexadecimal a datos de presión plantar
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
 
-#    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
-#    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     
     # Se inserta una muestra para compensar la perdida de pequeñas muestras del multiplexor 4
     # se requiere dar dos pasadas por dataset para reparar de la mejor manera.
@@ -202,24 +209,24 @@ def mix_sources_of_data(path, subject, experiment):
     insoleL_dataset = repare_samples_dataset(insoleL_dataset)
     insoleL_dataset = repare_samples_dataset(insoleL_dataset)
 
-#    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
-#    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
-#    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
+    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
+    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
+    insoleR_dataset = repare_samples_dataset(insoleR_dataset)
 
     # Se vuelve a recortar el numero de registros para evitar problemas de falta de muestras
     insoleL_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
-#    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
+    insoleR_dataset = assign_entry_point_and_transform_datasets(insoleL_dataset)
     
     converse_hex_plantar_pressure(insoleL_dataset, 0, "{}/{}/{}".format(path, routes.data_directory, routes.samples_full_l))
-#    converse_hex_plantar_pressure(insoleR_dataset, 1, "{}/{}/{}".format(path, routes.data_directory, routes.samples_full_r))
+    converse_hex_plantar_pressure(insoleR_dataset, 1, "{}/{}/{}".format(path, routes.data_directory, routes.samples_full_r))
 
     # Se cargan los dataframes referentes a las muestras de presión plantar
     df_insoleL  = pd.read_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_full_l))
-#    df_insoleR  = pd.read_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_full_r))
+    df_insoleR  = pd.read_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_full_r))
     
     # Se combina con el dataset de los frames
     assign_frame_to_sample(full_frame_data, df_insoleL, subject, experiment)
-#    assign_frame_to_sample(df_frames, df_insoleR)
+    assign_frame_to_sample(full_frame_data, df_insoleR, subject, experiment)
     
     # Se escribe el dataset resultante
     df_insoleL.to_csv("{}/{}/{}".format(path, routes.data_directory, routes.samples_l_with_frames))

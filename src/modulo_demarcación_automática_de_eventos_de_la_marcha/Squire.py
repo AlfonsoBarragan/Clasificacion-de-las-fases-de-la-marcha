@@ -151,3 +151,73 @@ def extract_to_hs_from_data_list(data_list):
     # -> No hacer nada, y a ver que pasa
     
     return gait_events_inter, gait_events_to_hs
+
+def calculatePCA(dataframe):
+    #file = pd.read_csv(path, low_memory=False)
+    estimator = PCA (n_components = 2)
+    X_pca = estimator.fit_transform(dataframe)
+
+    #Print
+    print(estimator.explained_variance_ratio_)
+    pd.DataFrame(np.matrix.transpose(estimator.components_),
+    columns=['PC-1', 'PC-2'], index=dataframe.columns)
+
+    #Print
+    fig, ax = plt.subplots()
+
+    for i in range(len(X_pca)):
+        plt.text(X_pca[i][0], X_pca[i][1], ".")
+
+    plt.xlim(-1, 1.5)
+    plt.ylim(-1, 1.5)
+    ax.grid(True)
+    fig.tight_layout()
+    plt.savefig(routes.path_plot + "pca.png")
+    
+    return X_pca
+
+def clustering(data_norm, X_pca, k):
+    
+    # 2.1 random inicialization
+    centroids, labels, z =  sklearn.cluster.k_means(data_norm, k, init="random" )
+    plot_pca(X_pca,labels, "kmeans", 'plots')
+
+    # 2.2 k-means ++
+    centroidsplus, labelsplus, zplus =  sklearn.cluster.k_means(data_norm, k, init="k-means++" )
+    plot_pca(X_pca, labelsplus, "kmeans++", 'plots')
+
+    # 6. characterization
+    n_clusters_ = len(set(labels)) #- (1 if -1 in labels else 0)
+    print('Estimated number of clusters: %d' % n_clusters_)
+    
+    print("Silhouette Coefficient (kmeans): %0.3f"
+          % metrics.silhouette_score(data_norm, labels))
+    print("Silhouette Coefficient (kmeans++): %0.3f"
+      % metrics.silhouette_score(data_norm, labelsplus))
+
+    return centroids, centroidsplus
+
+def plot_pca(X_pca, labels, type_clus, save_path):
+
+    colors      = np.array([x for x in 'bgrcmykbgrcmykbgrcmykbgrcmyk'])
+    colors      = np.hstack([colors] * 20)
+    fig, ax     = plt.subplots()
+    
+    for i in range(len(X_pca)):
+        plt.text(X_pca[i][0], X_pca[i][1], '.', color=colors[labels[i]])
+    
+    plt.xlim(-2, 4)
+    plt.ylim(-2, 4)
+    ax.grid(True)
+    fig.tight_layout()
+
+    plt.savefig(save_path)
+
+def confusion_matrix(test, preds, print_bool=True):
+    matriz = pd.crosstab(test['Gait_event'], preds, rownames=['actual'], colnames=['preds'])
+    
+    if print_bool:
+        print("Matriz de confusión:\n")
+        print(matriz)
+    
+    return matriz

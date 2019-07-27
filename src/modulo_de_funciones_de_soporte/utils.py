@@ -40,6 +40,14 @@ def normalize_data(dataframe):
      
     return dataframe_norm
 
+def normalize_data_standardScaler(dataframe):
+    min_max_scaler      = preprocessing.StandardScaler()
+    norm_values         = min_max_scaler.fit_transform(dataframe)
+    
+    dataframe_norm  = pd.DataFrame(data=norm_values, columns=dataframe.columns) 
+     
+    return dataframe_norm
+
 def divide_datasets(df_merged, percentage=0.67):
     
     df_divide = df_merged.sample(frac=1)
@@ -75,6 +83,30 @@ def insert_row_in_pos(pos, row_value, df):
     data_half_low = data_half_low.append(data_half_big, ignore_index = True)
 	
     return data_half_low
+
+
+def tree_to_code(tree, feature_names):
+    
+    tree_ = tree.tree_
+    feature_name = [
+        feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
+        for i in tree_.feature
+    ]
+    print("def tree({}):".format(", ".join(feature_names)))
+
+    def recurse(node, depth):
+        indent = "  " * depth
+        if tree_.feature[node] != _tree.TREE_UNDEFINED:
+            name = feature_name[node]
+            threshold = tree_.threshold[node]
+            print ("{}if {} <= {}:".format(indent, name, threshold))
+            recurse(tree_.children_left[node], depth + 1)
+            print ("{}else:  # if {} > {}".format(indent, name, threshold))
+            recurse(tree_.children_right[node], depth + 1)
+        else:
+            print ("{}return {}".format(indent, tree_.value[node]))
+
+    recurse(0, 1)
 
 
 ################## Extras section ###########################
@@ -131,6 +163,23 @@ def write_list_to_file(list_to_write, output_file):
 
 ####################### Model section ############################
 
+def save_context(thing, name, folder):
+ 
+    # Save to file in the current working directory
+    pkl_filename = "{}/{}".format(folder, name)  
+    with open(pkl_filename, 'wb') as file:  
+        pickle.dump(thing, file)
+        
+def load_context(name, folder):
+ 
+    # Save to file in the current working directory
+    pkl_filename = "{}/{}".format(folder, name)  
+    # Load from file
+    with open(pkl_filename, 'rb') as file:  
+        thing = pickle.load(file)
+    
+    return thing
+    
 def save_model(model, test, name, folder, feature_to_predict):
     
     features    = test.columns[:32]
