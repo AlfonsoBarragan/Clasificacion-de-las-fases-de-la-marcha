@@ -101,15 +101,3 @@ def resume_results(x_test, y_pred, y_test, model, dataset, confusion_matrix):
     dict_conf_matrix = {'model':model, 'dataset': dataset, 'conf_matrix':confusion_matrix}
     
     return (results_series, dict_conf_matrix)
-
-def plot_hist_acc_classifiers(results_dataframe, results_conf_matrix, route):
-    # Important repo https://github.com/wcipriano/pretty-print-confusion-matrix
-    g = sns.factorplot("Dataset", "Accuracy_cv", "Model", data=results_dataframe, kind="bar", 
-                       size=6, aspect=2, palette="deep", legend=True)
-    plt.savefig("{}/AccuracyHistByDatasetAndModel.png".format(route))
-
-    for dictionary in results_conf_matrix:
-        utils.pretty_plot_confusion_matrix(dictionary['conf_matrix'], save_route="{}/{}{}.jpg".format(route, dictionary['dataset'],
-                                                                                                       dictionary['model']))
-            
-    plt.close(g.fig)

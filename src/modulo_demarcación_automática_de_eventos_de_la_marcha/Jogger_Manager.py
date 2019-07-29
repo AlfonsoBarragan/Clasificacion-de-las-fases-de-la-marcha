@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import randint as sp_randint
 
 from sklearn import metrics, neighbors
-from sklearn.naive_bayes import GaussianNB, ComplementNB, BernoulliNB
+from sklearn.naive_bayes import GaussianNB, ComplementNB
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
@@ -176,82 +177,82 @@ def train_classifiers(gait_events_inter, gait_events_to_hs):
     
     # Training clasiffiers with the variants of datasets
     # Random sampled
-    rf_rs_class, results_rf_rs                              = random_forest(random_sampled_train, random_sampled_test, 'random_sampled')
-    dt_rs_class, results_dt_rs                              = decision_tree(random_sampled_train, random_sampled_test, 'random_sampled')
-    kbg_rs, kbb_rs, results_kbg_rs, results_kbb_rs          = knaive_bayes(random_sampled_train, random_sampled_test, 'random_sampled')
-    u_knn_rs, d_knn_rs, results_uknn_rs, results_dknn_rs    = k_nearest_neightbours(random_sampled_train, random_sampled_test, 'random_sampled')
+    rf_rs_class, results_rf_rs                              = random_forest(random_sampled_train, data_test_norm, 'random_sampled')
+    dt_rs_class, results_dt_rs                              = decision_tree(random_sampled_train, data_test_norm, 'random_sampled')
+    kbg_rs, kbb_rs, results_kbg_rs, results_kbb_rs          = knaive_bayes(random_sampled_train, data_test_norm, 'random_sampled')
+    u_knn_rs, d_knn_rs, results_uknn_rs, results_dknn_rs    = k_nearest_neightbours(random_sampled_train, data_test_norm, 'random_sampled')
     
     # Adding the models
     models_list.append({'model_name': 'Random Forest', 'dataset': 'Random Sampled', 'model': rf_rs_class, 'results': results_rf_rs })
     models_list.append({'model_name': 'Decision Tree', 'dataset': 'Random Sampled', 'model': dt_rs_class, 'results': results_dt_rs })
     models_list.append({'model_name': 'Naive Bayes (Gaussian)', 'dataset': 'Random Sampled', 'model': kbg_rs , 'results': results_kbg_rs })
-    models_list.append({'model_name': 'Naive Bayes (Multinomial)', 'dataset': 'Random Sampled', 'model': kbb_rs, 'results': results_kbb_rs})
+    models_list.append({'model_name': 'Naive Bayes (Complement)', 'dataset': 'Random Sampled', 'model': kbb_rs, 'results': results_kbb_rs})
     models_list.append({'model_name': 'Uniform KNN', 'dataset': 'Random Sampled', 'model': u_knn_rs, 'results': results_uknn_rs})
     models_list.append({'model_name': 'Distance KNN', 'dataset': 'Random Sampled', 'model': d_knn_rs, 'results': results_dknn_rs})
     
     # Clustering balanced
     # K-means
-    rf_ct_class, results_rf_ct                              = random_forest(centroids_train, random_sampled_test, 'centroids')
-    dt_ct_class, results_dt_ct                              = decision_tree(centroids_train, random_sampled_test, 'centroids')
-    kbg_ct, kbb_ct, results_kbg_ct, results_kbb_ct          = knaive_bayes(centroids_train, random_sampled_test, 'centroids')
-    u_knn_ct, d_knn_ct, results_uknn_ct, results_dknn_ct    = k_nearest_neightbours(centroids_train, random_sampled_test, 'centroids')
+    rf_ct_class, results_rf_ct                              = random_forest(centroids_train, data_test_norm, 'centroids')
+    dt_ct_class, results_dt_ct                              = decision_tree(centroids_train, data_test_norm, 'centroids')
+    kbg_ct, kbb_ct, results_kbg_ct, results_kbb_ct          = knaive_bayes(centroids_train, data_test_norm, 'centroids')
+    u_knn_ct, d_knn_ct, results_uknn_ct, results_dknn_ct    = k_nearest_neightbours(centroids_train, data_test_norm, 'centroids')
     
     # Adding the models
     models_list.append({'model_name': 'Random Forest', 'dataset': 'Centroids', 'model': rf_ct_class, 'results': results_rf_ct})
     models_list.append({'model_name': 'Decision Tree', 'dataset': 'Centroids', 'model': dt_ct_class, 'results': results_dt_ct })
     models_list.append({'model_name': 'Naive Bayes (Gaussian)', 'dataset': 'Centroids', 'model': kbg_ct , 'results': results_kbg_ct})
-    models_list.append({'model_name': 'Naive Bayes (Multinomial)', 'dataset': 'Centroids', 'model': kbb_ct, 'results': results_kbb_ct})
+    models_list.append({'model_name': 'Naive Bayes (Complement)', 'dataset': 'Centroids', 'model': kbb_ct, 'results': results_kbb_ct})
     models_list.append({'model_name': 'Uniform KNN', 'dataset': 'Centroids', 'model': u_knn_ct, 'results': results_uknn_ct})
     models_list.append({'model_name': 'Distance KNN', 'dataset': 'Centroids', 'model': d_knn_ct, 'results': results_dknn_ct})
     
     # K-means++
-    rf_ctp_class, results_rf_ctp                                = random_forest(centroids_plus_train, random_sampled_test, 'centroids++')
-    dt_ctp_class, results_dt_ctp                                = decision_tree(random_sampled_train, random_sampled_test, 'centroids++')    
-    kbg_ctp, kbb_ctp, results_kbg_ctp, results_kbb_ctp          = knaive_bayes(centroids_plus_train, random_sampled_test, 'centroids++')
-    u_knn_ctp, d_knn_ctp, results_uknn_ctp, results_dknn_ctp    = k_nearest_neightbours(centroids_plus_train, random_sampled_test, 'centroids++')
+    rf_ctp_class, results_rf_ctp                                = random_forest(centroids_plus_train, data_test_norm, 'centroids++')
+    dt_ctp_class, results_dt_ctp                                = decision_tree(random_sampled_train, data_test_norm, 'centroids++')    
+    kbg_ctp, kbb_ctp, results_kbg_ctp, results_kbb_ctp          = knaive_bayes(centroids_plus_train, data_test_norm, 'centroids++')
+    u_knn_ctp, d_knn_ctp, results_uknn_ctp, results_dknn_ctp    = k_nearest_neightbours(centroids_plus_train, data_test_norm, 'centroids++')
     
     # Adding the models
     models_list.append({'model_name': 'Random Forest', 'dataset': 'Centroids++', 'model': rf_ctp_class, 'results': results_rf_ctp})
     models_list.append({'model_name': 'Decision Tree', 'dataset': 'Centroids++', 'model': dt_ctp_class, 'results': results_dt_ctp })    
     models_list.append({'model_name': 'Naive Bayes (Gaussian)', 'dataset': 'Centroids++', 'model': kbg_ctp , 'results': results_kbg_ctp})
-    models_list.append({'model_name': 'Naive Bayes (Multinomial)', 'dataset': 'Centroids++', 'model': kbb_ctp, 'results': results_kbb_ctp})
+    models_list.append({'model_name': 'Naive Bayes (Complement)', 'dataset': 'Centroids++', 'model': kbb_ctp, 'results': results_kbb_ctp})
     models_list.append({'model_name': 'Uniform KNN', 'dataset': 'Centroids++', 'model': u_knn_ctp, 'results': results_uknn_ctp})
     models_list.append({'model_name': 'Distance KNN', 'dataset': 'Centroids++', 'model': d_knn_ctp, 'results': results_dknn_ctp})
     
     # Math function compression
-    rf_mf_class, results_rf_mf                              = random_forest(math_balance_train, random_sampled_test, 'math_function')
-    dt_mf_class, results_dt_mf                              = decision_tree(math_balance_train, random_sampled_test, 'math_function')    
-    kbg_mf, kbb_mf, results_kbg_mf, results_kbb_mf          = knaive_bayes(math_balance_train, random_sampled_test, 'math_function')
-    u_knn_mf, d_knn_mf, results_uknn_mf, results_dknn_mf    = k_nearest_neightbours(math_balance_train, random_sampled_test, 'math_function')
+    rf_mf_class, results_rf_mf                              = random_forest(math_balance_train, data_test_norm, 'math_function')
+    dt_mf_class, results_dt_mf                              = decision_tree(math_balance_train, data_test_norm, 'math_function')    
+    kbg_mf, kbb_mf, results_kbg_mf, results_kbb_mf          = knaive_bayes(math_balance_train, data_test_norm, 'math_function')
+    u_knn_mf, d_knn_mf, results_uknn_mf, results_dknn_mf    = k_nearest_neightbours(math_balance_train, data_test_norm, 'math_function')
     
     # Adding the models
     models_list.append({'model_name': 'Random Forest', 'dataset': 'Math Function', 'model': rf_mf_class, 'results': results_rf_mf})
     models_list.append({'model_name': 'Decision Tree', 'dataset': 'Math Function', 'model': dt_mf_class, 'results': results_dt_mf})
     models_list.append({'model_name': 'Naive Bayes (Gaussian)', 'dataset': 'Math Function', 'model': kbg_mf , 'results': results_kbg_mf})
-    models_list.append({'model_name': 'Naive Bayes (Multinomial)', 'dataset': 'Math Function', 'model': kbb_mf, 'results': results_kbb_mf})
+    models_list.append({'model_name': 'Naive Bayes (Complement)', 'dataset': 'Math Function', 'model': kbb_mf, 'results': results_kbb_mf})
     models_list.append({'model_name': 'Uniform KNN', 'dataset': 'Math Function', 'model': u_knn_mf, 'results': results_uknn_mf})
     models_list.append({'model_name': 'Distance KNN', 'dataset': 'Math Function', 'model': d_knn_mf, 'results': results_dknn_mf})
     
     # Nothing
-    rf_no_class, results_rf_no                              = random_forest(nothing_train, random_sampled_test, 'no_balanced')
-    dt_no_class, results_dt_no                              = decision_tree(nothing_train, random_sampled_test, 'no_balanced')    
-    kbg_no, kbb_no, results_kbg_no, results_kbb_no          = knaive_bayes(nothing_train, random_sampled_test, 'no_balanced')
-    u_knn_no, d_knn_no, results_uknn_no, results_dknn_no    = k_nearest_neightbours(nothing_train, random_sampled_test, 'no_balanced')
+    rf_no_class, results_rf_no                              = random_forest(nothing_train, data_test_norm, 'no_balanced')
+    dt_no_class, results_dt_no                              = decision_tree(nothing_train, data_test_norm, 'no_balanced')    
+    kbg_no, kbb_no, results_kbg_no, results_kbb_no          = knaive_bayes(nothing_train, data_test_norm, 'no_balanced')
+    u_knn_no, d_knn_no, results_uknn_no, results_dknn_no    = k_nearest_neightbours(nothing_train, data_test_norm, 'no_balanced')
     
     # Adding the models
     models_list.append({'model_name': 'Random Forest', 'dataset': 'Nothing', 'model': rf_no_class, 'results': results_rf_no})
     models_list.append({'model_name': 'Decision Tree', 'dataset': 'Nothing', 'model': dt_no_class, 'results': results_dt_no})
     models_list.append({'model_name': 'Naive Bayes (Gaussian)', 'dataset': 'Nothing', 'model': kbg_no, 'results': results_kbg_no})
-    models_list.append({'model_name': 'Naive Bayes (Multinomial)', 'dataset': 'Nothing', 'model': kbb_no, 'results': results_kbb_no})
+    models_list.append({'model_name': 'Naive Bayes (Complement)', 'dataset': 'Nothing', 'model': kbb_no, 'results': results_kbb_no})
     models_list.append({'model_name': 'Uniform KNN', 'dataset': 'Nothing', 'model': u_knn_no, 'results': results_uknn_no})
     models_list.append({'model_name': 'DistanceKNN', 'dataset': 'Nothing', 'model': d_knn_no, 'results': results_dknn_no})
 
   # Cross validation full-data
-    acc_cross_validation_by_model_rs, conf_matrix_cross_validation_by_model_rs    = Jogger_Court.cross_validations_list_models_without_learn(random_sampled_test, 5, True, [rf_rs_class, dt_rs_class, kbg_rs, kbb_rs, u_knn_rs, d_knn_rs])
-    acc_cross_validation_by_model_ct, conf_matrix_cross_validation_by_model_ct    = Jogger_Court.cross_validations_list_models_without_learn(random_sampled_test, 5, True, [rf_ct_class, dt_ct_class, kbg_ct, kbb_ct, u_knn_ct, d_knn_ct])
-    acc_cross_validation_by_model_ctp, conf_matrix_cross_validation_by_model_ctp   = Jogger_Court.cross_validations_list_models_without_learn(random_sampled_test, 5, True, [rf_ctp_class, dt_ctp_class, kbg_ctp, kbb_ctp, u_knn_ctp, d_knn_ctp])
-    acc_cross_validation_by_model_mf, conf_matrix_cross_validation_by_model_mf    = Jogger_Court.cross_validations_list_models_without_learn(random_sampled_test, 5, True, [rf_mf_class, dt_mf_class, kbg_mf, kbb_mf, u_knn_mf, d_knn_mf])
-    acc_cross_validation_by_model_no, conf_matrix_cross_validation_by_model_no    = Jogger_Court.cross_validations_list_models_without_learn(random_sampled_test, 5, True, [rf_no_class, dt_no_class, kbg_no, kbb_no, u_knn_no, d_knn_no])
+    acc_cross_validation_by_model_rs, conf_matrix_cross_validation_by_model_rs    = Jogger_Court.cross_validations_list_models_without_learn(data_test_norm, 5, True, [rf_rs_class, dt_rs_class, kbg_rs, kbb_rs, u_knn_rs, d_knn_rs])
+    acc_cross_validation_by_model_ct, conf_matrix_cross_validation_by_model_ct    = Jogger_Court.cross_validations_list_models_without_learn(data_test_norm, 5, True, [rf_ct_class, dt_ct_class, kbg_ct, kbb_ct, u_knn_ct, d_knn_ct])
+    acc_cross_validation_by_model_ctp, conf_matrix_cross_validation_by_model_ctp   = Jogger_Court.cross_validations_list_models_without_learn(data_test_norm, 5, True, [rf_ctp_class, dt_ctp_class, kbg_ctp, kbb_ctp, u_knn_ctp, d_knn_ctp])
+    acc_cross_validation_by_model_mf, conf_matrix_cross_validation_by_model_mf    = Jogger_Court.cross_validations_list_models_without_learn(data_test_norm, 5, True, [rf_mf_class, dt_mf_class, kbg_mf, kbb_mf, u_knn_mf, d_knn_mf])
+    acc_cross_validation_by_model_no, conf_matrix_cross_validation_by_model_no    = Jogger_Court.cross_validations_list_models_without_learn(data_test_norm, 5, True, [rf_no_class, dt_no_class, kbg_no, kbb_no, u_knn_no, d_knn_no])
     
     acc_by_dataset                      = [acc_cross_validation_by_model_rs, acc_cross_validation_by_model_ct, acc_cross_validation_by_model_ctp,
                                            acc_cross_validation_by_model_mf, acc_cross_validation_by_model_no]
@@ -340,7 +341,7 @@ def random_forest(train, test, dataset):
                   'Relevancia': clf_rf.feature_importances_}),"\n")
     print("Máxima relevancia RF :" , max(clf_rf.feature_importances_), "\n")
 
-    os.system('mkdir trees/{}'.format(dataset))
+    os.system('mkdir Graphics/trees/{}'.format(dataset))
     
     for birch in range(len(clf_rf.estimators_)):
       print(clf_rf.estimators_[birch])
@@ -349,9 +350,9 @@ def random_forest(train, test, dataset):
                       filled=True, rounded=True,
                       special_characters=True, class_names = ['Intermediate_event','Heel Strike', 'Toe off'])
       (graph,) = pydot.graph_from_dot_file('tree_from_forest.dot')
-      graph.write_png('trees/{}/tree_from_forest_birch_{}.png'.format(dataset, birch))
+      graph.write_png('Graphics/trees/{}/tree_from_forest_birch_{}.png'.format(dataset, birch))
     
-    results_rf = Squire.resume_results(x_test, preds_rf, y_test, 'RandomForest', dataset, rf_confusion_matrix)
+    results_rf = Jogger_Court.resume_results(x_test, preds_rf, y_test, 'RandomForest', dataset, rf_confusion_matrix)
     
     return clf_rf, results_rf
 
@@ -391,16 +392,16 @@ def decision_tree(train, test, dataset):
                   'Relevancia': clf_rf.feature_importances_}),"\n")
     print("Máxima relevancia RF :" , max(clf_rf.feature_importances_), "\n")
 
-    os.system('mkdir trees/{}'.format(dataset))
+    os.system('mkdir Graphics/trees/{}'.format(dataset))
     
     export_graphviz(clf_rf, out_file='tree_from_forest.dot',
                       feature_names=list(test.drop(['Gait_event'], axis=1)),
                       filled=True, rounded=True,
                       special_characters=True, class_names = ['Intermediate_event','Heel Strike', 'Toe off'])
     (graph,) = pydot.graph_from_dot_file('tree_from_forest.dot')
-    graph.write_png('trees/{}/decision_tree.png'.format(dataset))
+    graph.write_png('Graphics/trees/{}/decision_tree.png'.format(dataset))
     
-    results_rf = Squire.resume_results(x_test, preds_rf, y_test, 'DecisionTree', dataset, rf_confusion_matrix)
+    results_rf = Jogger_Court.resume_results(x_test, preds_rf, y_test, 'DecisionTree', dataset, rf_confusion_matrix)
     
     return clf_rf, results_rf
 
@@ -418,20 +419,20 @@ def knaive_bayes(train, test, dataset):
     
     y_pred = gnb.predict(x_test)
     
-    gnb_confusion_matrix = confusion_matrix(test, y_pred)
+    gnb_confusion_matrix = Squire.confusion_matrix(test, y_pred)
     print("[Gaussian] Number of mislabeled points out of a total %d points : %d" % (x_test.shape[0],(y_test != y_pred).sum()))  
     
-    results_kbg = resume_results(x_test, y_pred, y_test, 'GaussianKB', dataset, gnb_confusion_matrix)
+    results_kbg = Jogger_Court.resume_results(x_test, y_pred, y_test, 'GaussianKB', dataset, gnb_confusion_matrix)
     
-    cnb = BernoulliNB()
+    cnb = ComplementNB()
     cnb = cnb.fit(x_train, y_train)
     
     y_pred_cnb = cnb.predict(x_test)
 
-    cnb_confusion_matrix = confusion_matrix(test, y_pred_cnb)
+    cnb_confusion_matrix = Squire.confusion_matrix(test, y_pred_cnb)
     print("[Complement] Number of mislabeled points out of a total %d points : %d" % (x_test.shape[0],(y_test != y_pred_cnb).sum()))
     
-    results_kbc = resume_results(x_test, y_pred_cnb, y_test, 'ComplementKB', dataset, cnb_confusion_matrix)
+    results_kbc = Jogger_Court.resume_results(x_test, y_pred_cnb, y_test, 'ComplementKB', dataset, cnb_confusion_matrix)
     
     
     return cnb, gnb, results_kbg, results_kbc
@@ -493,17 +494,17 @@ def k_nearest_neightbours(train, test, dataset):
             u_knn.fit(x_train,y_train)
             uniform_pred = u_knn.predict(x_test)
             
-            u_knn_confusion_matrix = confusion_matrix(test, uniform_pred)
+            u_knn_confusion_matrix = Squire.confusion_matrix(test, uniform_pred)
             print("Number of mislabeled points out of a total %d points : %d" % (x_test.shape[0],(y_test != uniform_pred).sum()))    
             
-            results_u_knn = resume_results(x_test, uniform_pred, y_test, 'UniformKNN', dataset, u_knn_confusion_matrix)
+            results_u_knn = Jogger_Court.resume_results(x_test, uniform_pred, y_test, 'UniformKNN', dataset, u_knn_confusion_matrix)
             
         else:
             d_knn = neighbors.KNeighborsClassifier(n_neighbors_distance, weights=weights)
             d_knn.fit(x_train,y_train)
             distance_pred = d_knn.predict(x_test)
             
-            d_knn_confusion_matrix = confusion_matrix(test, distance_pred)
+            d_knn_confusion_matrix = Squire.confusion_matrix(test, distance_pred)
             print("Number of mislabeled points out of a total %d points : %d" % (x_test.shape[0],(y_test != distance_pred).sum()))    
             
             results_d_knn = resume_results(x_test, distance_pred, y_test, 'DistanceKNN', dataset, d_knn_confusion_matrix)

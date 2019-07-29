@@ -7,7 +7,15 @@ Created on Sun Jun 16 20:59:50 2019
 """
 from modulo_de_funciones_de_soporte import utils, routes
 
+from sklearn.decomposition import PCA
+
+import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn.neighbors
+import sklearn.cluster
+from sklearn import metrics
+import seaborn as sns
 
 def load_data_from_exp(subject_list, exp_per_subject):
     
@@ -221,3 +229,15 @@ def confusion_matrix(test, preds, print_bool=True):
         print(matriz)
     
     return matriz
+
+def plot_hist_acc_classifiers(results_dataframe, results_conf_matrix, route):
+    # Important repo https://github.com/wcipriano/pretty-print-confusion-matrix
+    g = sns.factorplot("Dataset", "Accuracy_cv", "Model", data=results_dataframe, kind="bar", 
+                       size=6, aspect=2, palette="deep", legend=True)
+    plt.savefig("{}/AccuracyHistByDatasetAndModel.png".format(route))
+
+    for dictionary in results_conf_matrix:
+        utils.pretty_plot_confusion_matrix(dictionary['conf_matrix'], save_route="{}/{}{}.jpg".format(route, dictionary['dataset'],
+                                                                                                       dictionary['model']))
+            
+    plt.close(g.fig)
