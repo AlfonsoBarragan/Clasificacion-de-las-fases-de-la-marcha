@@ -17,3 +17,9 @@ Debido a que estos árboles resultaban por razones de tamaño inviables de ubica
 También se generaron matrices de confusión por clase de dataset y clasificador, y se hayan en el enlace:
 
 [Matrices de confusión](https://github.com/AlfonsoBarragan/Clasificacion-de-las-fases-de-la-marcha/tree/master/src/modulo_demarcaci%C3%B3n_autom%C3%A1tica_de_eventos_de_la_marcha/Graphics/ConfusionMatrixTraining)
+
+## Diagrama de Gantt
+
+La planificación del proyecto se refleja en el diagrama de Gantt al que se puede acceder en el siguiente enlace:
+
+[Diagrama de Gantt](https://github.com/AlfonsoBarragan/Clasificacion-de-las-fases-de-la-marcha/blob/master/src/modulo_demarcaci%C3%B3n_autom%C3%A1tica_de_eventos_de_la_marcha/Graphics/diaGantTfg.pdf)
